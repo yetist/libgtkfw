@@ -50,7 +50,6 @@ int main( int argc, char *argv[] )
     window = gfw_window_new (GTK_WINDOW_TOPLEVEL);
     //window = gfw_window_new (GTK_WINDOW_POPUP);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
-	gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
 	bg = gdk_pixbuf_new_from_file("background.png", NULL);
 
