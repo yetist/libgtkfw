@@ -20,6 +20,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * */
 #include <gfw/gfw-ip-entry.h>
+#include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
+#include <stdlib.h>
+#include <math.h>
 
 enum {
     CHANGED_SIGNAL,
@@ -41,6 +45,7 @@ typedef struct _GfwIpEntryPrivate        GfwIpEntryPrivate;
 struct _GfwIpEntryPrivate
 {
     guint8 address[4];
+    guint8 range[4][2];
 };
 
 static void gfw_ip_entry_set_property  (GObject          *object,
@@ -51,6 +56,9 @@ static void gfw_ip_entry_get_property  (GObject          *object,
                                          guint             prop_id,
                                          GValue           *value,
                                          GParamSpec       *pspec);
+static void ip_entry_render (GfwIpEntry *ipentry);
+static gboolean ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event);
+static void ip_entry_move_cursor (GObject *entry, GParamSpec *spec);
 
 static guint ip_entry_signals[LAST_SIGNAL] = {0};
 
@@ -74,6 +82,31 @@ gfw_ip_entry_class_init (GfwIpEntryClass *class)
 				g_cclosure_marshal_VOID__VOID,
 				G_TYPE_NONE, 0);
 
+    /* Register four GObject properties, one for each ip address number. */
+    g_object_class_install_property (gobject_class, PROP_IP1,
+            g_param_spec_int ("ip-number-1",
+                "IP Address Number 1",
+                "The first IP address number",
+                0, 255, 0,
+                G_PARAM_READWRITE));
+    g_object_class_install_property (gobject_class, PROP_IP2,
+            g_param_spec_int ("ip-number-2",
+                "IP Address Number 2",
+                "The second IP address number",
+                0, 255, 0,
+                G_PARAM_READWRITE));
+    g_object_class_install_property (gobject_class, PROP_IP3,
+            g_param_spec_int ("ip-number-3",
+                "IP Address Number 3",
+                "The third IP address number",
+                0, 255, 0,
+                G_PARAM_READWRITE));
+    g_object_class_install_property (gobject_class, PROP_IP4,
+            g_param_spec_int ("ip-number-4",
+                "IP Address Number 1",
+                "The fourth IP address number",
+                0, 255, 0,
+                G_PARAM_READWRITE));
     g_type_class_add_private (class, sizeof (GfwIpEntryPrivate));
 }
 
@@ -84,6 +117,28 @@ gfw_ip_entry_init (GfwIpEntry *ip_entry)
 
     priv = GFW_IP_ENTRY_GET_PRIVATE (ip_entry);
 
+    PangoFontDescription *fd;
+    guint i;
+
+    for (i = 0; i < 4; i++)
+    {
+        priv->address[i] = 0;
+        priv->range[i][0] = 0;
+        priv->range[i][1] = 255;
+    }
+
+
+    fd = pango_font_description_from_string ("Monospace");
+    gtk_widget_modify_font (GTK_WIDGET (ip_entry), fd);
+    ip_entry_render (ip_entry);
+    pango_font_description_free (fd);
+
+    /* The key-press-event signal will be used to filter out certain keys. We will
+     * also monitor the cursor-position property so it can be moved correctly. */
+    g_signal_connect (G_OBJECT (ip_entry), "key-press-event",
+            G_CALLBACK (ip_entry_key_pressed), NULL);
+    g_signal_connect (G_OBJECT (ip_entry), "notify::cursor-position",
+            G_CALLBACK (ip_entry_move_cursor), NULL);
 }
 
 GfwIpEntry*
@@ -98,13 +153,33 @@ gfw_ip_entry_set_property (GObject      *object,
                             const GValue *value,
                             GParamSpec   *pspec)
 {
-    GfwIpEntry *ip_entry;
+    GfwIpEntry *ipentry;
 
-    ip_entry = GFW_IP_ENTRY (object);
+    ipentry = GFW_IP_ENTRY (object);
+    //gint address[4] = { -1, -1, -1, -1 };
 
     switch (prop_id)
     {
-
+        case PROP_IP1:
+            //address[0] = g_value_get_int (value);
+            //my_ip_address_set_address (ipaddress, address);
+            gfw_ip_entry_set_n_value(ipentry, 0, g_value_get_int(value));
+            break;
+        case PROP_IP2:
+            //address[1] = g_value_get_int (value);
+            //my_ip_address_set_address (ipaddress, address);
+            gfw_ip_entry_set_n_value(ipentry, 1, g_value_get_int(value));
+            break;
+        case PROP_IP3:
+            //address[2] = g_value_get_int (value);
+            //my_ip_address_set_address (ipaddress, address);
+            gfw_ip_entry_set_n_value(ipentry, 2, g_value_get_int(value));
+            break;
+        case PROP_IP4:
+            //address[3] = g_value_get_int (value);
+            //my_ip_address_set_address (ipaddress, address);
+            gfw_ip_entry_set_n_value(ipentry, 3, g_value_get_int(value));
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
             break;
@@ -118,17 +193,202 @@ gfw_ip_entry_get_property (GObject      *object,
                             GParamSpec   *pspec)
 {
     GfwIpEntry *ip_entry;
+    GfwIpEntryPrivate *priv;
 
     ip_entry = GFW_IP_ENTRY (object);
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ip_entry);
 
     switch (prop_id)
     {
-
+        case PROP_IP1:
+            g_value_set_int (value, priv->address[0]);
+            break;
+        case PROP_IP2:
+            g_value_set_int (value, priv->address[1]);
+            break;
+        case PROP_IP3:
+            g_value_set_int (value, priv->address[2]);
+            break;
+        case PROP_IP4:
+            g_value_set_int (value, priv->address[3]);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
             break;
     }
 }
+
+/* Render the current content of the IP address in the GtkEntry widget. */
+static void ip_entry_render (GfwIpEntry *ipentry)
+{
+    GfwIpEntryPrivate *priv;
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ipentry);
+
+    GString *text;
+    guint i;
+    /* Create a string that displays the IP address content, adding spaces if a
+     * number cannot fill three characters. */
+    text = g_string_new (NULL);
+    for (i = 0; i < 4; i++)
+    {
+        gchar *temp = g_strdup_printf ("%3i.", priv->address[i]);
+        text = g_string_append (text, temp);
+        g_free (temp);
+    }
+    /* Remove the trailing decimal place and add the string to the GtkEntry. */
+    text = g_string_truncate (text, 15);
+    gtk_entry_set_text (GTK_ENTRY (ipentry), text->str);
+    g_string_free (text, TRUE);
+}
+
+/* Force the cursor to always be at the end of one of the four numbers. */
+static void ip_entry_move_cursor (GObject *entry, GParamSpec *spec)
+{
+    gint cursor = gtk_editable_get_position (GTK_EDITABLE (entry));
+    if (cursor <= 3)
+        gtk_editable_set_position(GTK_EDITABLE (entry), 3);
+    else if (cursor <= 7)
+        gtk_editable_set_position(GTK_EDITABLE (entry), 7);
+    else if (cursor <= 11)
+        gtk_editable_set_position(GTK_EDITABLE (entry), 11);
+    else
+        gtk_editable_set_position(GTK_EDITABLE (entry), 15);
+}
+
+/* Handle key presses of numbers, tabs, backspaces and returns. */
+static gboolean ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event)
+{
+    GfwIpEntryPrivate *priv;
+    priv = GFW_IP_ENTRY_GET_PRIVATE (entry);
+
+    guint k = event->keyval;
+    gint cursor, value;
+    /* If the key is an integer, append the new number to the address. This is only
+     * done if the resulting number will be less than 255. */
+    if ((k >= GDK_0 && k <= GDK_9) || (k >= GDK_KP_0 && k <= GDK_KP_9))
+    {
+        cursor = floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 4);
+        value = g_ascii_digit_value (event->string[0]);
+        if ((priv->address[cursor] == 25) && (value > 5))
+            return TRUE;
+                if (priv->address[cursor] < 26)
+                {
+                    priv->address[cursor] *= 10;
+                    priv->address[cursor] += value;
+                    ip_entry_render (GFW_IP_ENTRY(entry));
+                    gtk_editable_set_position (GTK_EDITABLE (entry), (4 * cursor) + 3);
+                    g_signal_emit_by_name ((gpointer) entry, "ip-changed");
+                }
+    }
+    /* Move to the next number or wrap around to the first. */
+    else if (k == GDK_Tab)
+    {
+        cursor = (floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 4) + 1);
+        gtk_editable_set_position (GTK_EDITABLE (entry), (4 * (cursor % 4)) + 3);
+    }
+    /* Delete the last digit of the current number. This just divides the number by
+     * 10, relying on the fact that any remainder will be ignored. */
+    else if (k == GDK_BackSpace)
+    {
+        cursor = floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 4);
+        priv->address[cursor] /= 10;
+        ip_entry_render (GFW_IP_ENTRY(entry));
+        gtk_editable_set_position (GTK_EDITABLE (entry), (4 * cursor) + 3);
+        g_signal_emit_by_name ((gpointer) entry, "ip-changed");
+    }
+    /* Activate the GtkEntry widget, which corresponds to the activate signal. */
+    else if ((k == GDK_Return) || (k == GDK_KP_Enter))
+        gtk_widget_activate (GTK_WIDGET (entry));
+    return TRUE;
+}
+
+
+void  gfw_ip_entry_set_address (GfwIpEntry *ipentry, guint8 address[4])
+{
+    GfwIpEntryPrivate *priv;
+    guint i;
+
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ipentry);
+
+    for (i = 0; i < 4; i++)
+    {
+        if (address[i] >= priv->range[i][0] && address[i] <= priv->range[i][1])
+        {
+            priv->address[i] = address[i];
+        }
+    }
+    ip_entry_render (ipentry);
+    g_signal_emit_by_name ((gpointer) ipentry, "ip-changed");
+}
+
+void gfw_ip_entry_set_inet_address   (GfwIpEntry *ipentry, GInetAddress *address)
+{
+    const guint8 *addr;
+    addr = g_inet_address_to_bytes(address);
+    //guint8 address[4] = {addr.S_un.S_un_b.s_b1, addr.S_un.S_un_b.s_b2, addr.S_un.S_un_b.s_b3, addr.S_un.S_un_b.s_b4};
+    //gfw_ip_entry_set_address (ipentry, address);
+}
+
+void gfw_ip_entry_set_n_value (GfwIpEntry *ipentry, gint n, guint8 value)
+{
+    GfwIpEntryPrivate *priv;
+
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ipentry);
+    if ((n >=0 && n <= 3) && (value >= priv->range[n][0] && value <= priv->range[n][1]))
+    {
+        priv->address[n] = value;
+    }
+    ip_entry_render (ipentry);
+    g_signal_emit_by_name ((gpointer) ipentry, "ip-changed");
+}
+
+void  gfw_ip_entry_set_values (GfwIpEntry *ipentry, guint8 v0, guint8 v1, guint8 v2, guint8 v3);
+
+void  gfw_ip_entry_set_n_range (GfwIpEntry *ipentry, gint n, guint8 lower, guint8 upper)
+{
+    GfwIpEntryPrivate *priv;
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ipentry);
+
+    if ( n < 0 || n > 255)
+        return;
+
+    if (lower >=0 && lower <=255)
+        priv->range[n][0]=lower;
+    if (upper >=0 && upper <=255)
+        priv->range[n][1]=upper;
+}
+
+void            gfw_ip_entry_set_n_focus        (GfwIpEntry *ipentry, gint n);
+
+
+
+gchar* gfw_ip_entry_get_string         (GfwIpEntry *ipentry)
+{
+    GfwIpEntryPrivate *priv;
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ipentry);
+    return g_strdup_printf ("%d.%d.%d.%d", priv->address[0], priv->address[1], priv->address[2], priv->address[3]);
+}
+
+GInetAddress* gfw_ip_entry_get_inet_address  (GfwIpEntry *ipentry)
+{
+    GfwIpEntryPrivate *priv;
+    GInetAddress *inetaddr;
+
+    priv = GFW_IP_ENTRY_GET_PRIVATE (ipentry);
+    inetaddr = g_inet_address_new_from_bytes (priv->address, G_SOCKET_FAMILY_IPV4);
+
+    return inetaddr;
+}
+
+void            gfw_ip_entry_get_values         (GfwIpEntry *ipentry, guint8 *v0, guint8 *v1, guint8 *v2, guint8 *v3);
+guint8          gfw_ip_entry_get_n_value        (GfwIpEntry *ipentry, gint n);
+
+
+gboolean        gfw_ip_entry_is_blank           (GfwIpEntry *ipentry)
+{
+}
+
+void            gfw_ip_entry_clear              (GfwIpEntry *ipentry);
 
 /*
 vi:ts=4:wrap:ai:expandtab

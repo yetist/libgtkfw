@@ -27,6 +27,8 @@
 
 #include <gfw/gfw-button.h>
 #include <gfw/gfw-window.h>
+#include <gfw/gfw-ip-entry.h>
+#include <gfw/gfw-pie-chart.h>
 
 #undef __GTKFW_H_INSIDE__
 

@@ -59,14 +59,15 @@ struct _GfwIpEntryClass
 GType           gfw_ip_entry_get_type           (void) G_GNUC_CONST;
 GfwIpEntry*     gfw_ip_entry_new                (void);
 
-void            gfw_ip_entry_set_addr           (GfwIpEntry *ipentry, struct in_addr addr);
+void            gfw_ip_entry_set_inet_address   (GfwIpEntry *ipentry, GInetAddress *address);
+void            gfw_ip_entry_set_address        (GfwIpEntry *ipentry, guint8 address[4]);
 void            gfw_ip_entry_set_n_value        (GfwIpEntry *ipentry, gint n, guint8 value);
 void            gfw_ip_entry_set_values         (GfwIpEntry *ipentry, guint8 v0, guint8 v1, guint8 v2, guint8 v3);
 void            gfw_ip_entry_set_n_range        (GfwIpEntry *ipentry, gint n, guint8 lower, guint8 upper);
 void            gfw_ip_entry_set_n_focus        (GfwIpEntry *ipentry, gint n);
 
 gchar*          gfw_ip_entry_get_string         (GfwIpEntry *ipentry);
-struct in_addr  gfw_ip_entry_get_addr           (GfwIpEntry *ipentry);
+GInetAddress*   gfw_ip_entry_get_inet_address   (GfwIpEntry *ipentry);
 void            gfw_ip_entry_get_values         (GfwIpEntry *ipentry, guint8 *v0, guint8 *v1, guint8 *v2, guint8 *v3);
 guint8          gfw_ip_entry_get_n_value        (GfwIpEntry *ipentry, gint n);
 
