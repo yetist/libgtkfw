@@ -2,7 +2,7 @@
 #include <math.h>
 #include <glib.h>
 #include <gtk/gtk.h>
-#include "gfw-pie-chart.h"
+#include <gfw/gfw-pie-chart.h>
  
  
 gboolean rotate_chart_tcb( GfwPieChart *pie ) {

@@ -57,6 +57,7 @@ AC_SUBST(GTK_LIBS)
 AC_CONFIG_FILES([
 gtkfw-1.0.pc
 gfw/Makefile
+tests/Makefile
 Makefile
 ])
 

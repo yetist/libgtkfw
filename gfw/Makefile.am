@@ -7,11 +7,13 @@ INCLUDES = 					\
 
 source_h = \
 	gfw-button.h	\
-	gfw-window.h
+	gfw-window.h	\
+	gfw-pie-chart.h
 
 source_c = \
 	gfw-button.c	\
-	gfw-window.c
+	gfw-window.c	\
+	gfw-pie-chart.c
 
 gtkfwincludedir=$(includedir)/libgtkfw-1.0
 gtkfwinclude_HEADERS = gtkfw.h
