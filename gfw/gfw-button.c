@@ -50,6 +50,7 @@ static gboolean gfw_button_press (GtkWidget *widget, GdkEventButton *event);
 static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event);
 static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *event);
 static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *event);
+static gboolean gfw_button_query_tooltip (GtkWidget  *widget, gint x, gint y, gboolean keyboard_tip, GtkTooltip *tooltip);
 
 static void gfw_button_state_changed   (GtkWidget *widget, GtkStateType previous_state);
 void gfw_button_clicked (GfwButton *button);
@@ -76,14 +77,15 @@ static void gfw_button_class_init (GfwButtonClass *class)
 	gobject_class->get_property = gfw_button_get_property;
 
 #if GTK_CHECK_VERSION(3,0,0)
-		widget_class->get_preferred_width = gfw_button_get_preferred_width;
-		widget_class->get_preferred_height = gfw_button_get_preferred_height;
-		widget_class->draw = gfw_button_draw;
+	widget_class->get_preferred_width = gfw_button_get_preferred_width;
+	widget_class->get_preferred_height = gfw_button_get_preferred_height;
+	widget_class->draw = gfw_button_draw;
 #else
-		widget_class->size_request = gfw_button_size_request;
-		widget_class->expose_event = gfw_button_expose;
+	widget_class->size_request = gfw_button_size_request;
+	widget_class->expose_event = gfw_button_expose;
 #endif
 
+	widget_class->query_tooltip = gfw_button_query_tooltip;
 	widget_class->state_changed = gfw_button_state_changed;
 	widget_class->button_press_event = gfw_button_press;
 	widget_class->button_release_event = gfw_button_release;
@@ -206,6 +208,52 @@ static void gfw_button_get_property (GObject *object, guint prop_id, GValue *val
 			break;
 	}
 }
+
+static gboolean gfw_button_query_tooltip (GtkWidget  *widget,
+                         gint        x,
+                         gint        y,
+                         gboolean    keyboard_tip,
+                         GtkTooltip *tooltip)
+{
+	GfwButton *button;
+	GfwButtonPrivate *priv;
+
+	button = GFW_BUTTON (widget);
+	priv = GFW_BUTTON_GET_PRIVATE (button);
+
+	if (!keyboard_tip)
+	{
+		g_printf("query_tooltip(), x=%d, y=%d\n", x, y);
+		g_printf("tooltip(t):%s\n", gtk_widget_get_tooltip_text(widget));
+		g_printf("tooltip(m):%s\n", gtk_widget_get_tooltip_markup(widget));
+		//icon_pos = gtk_entry_get_icon_at_pos (entry, x, y);
+		if (priv->in_button)
+		{
+			gtk_tooltip_set_markup (tooltip, gtk_widget_get_tooltip_markup(widget));
+			return TRUE;
+		}
+		else
+			return FALSE;
+		/*
+		if (icon_pos != -1)
+		{
+			if ((icon_info = priv->icons[icon_pos]) != NULL)
+			{
+				if (icon_info->tooltip)
+				{
+					gtk_tooltip_set_markup (tooltip, icon_info->tooltip);
+					return TRUE;
+				}
+
+				return FALSE;
+			}
+		}
+		*/
+	}
+
+	return GTK_WIDGET_CLASS (gfw_button_parent_class)->query_tooltip (widget, x, y, keyboard_tip, tooltip);
+}
+
 
 /* public functions below */
 
