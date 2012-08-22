@@ -35,29 +35,13 @@ button_SOURCES = window.c
 window_SOURCES = window.c
 ipentry_SOURCES = ipaddress.c
 
-
 EXTRA_DIST += 			\
-	gradient1.png		\
-	prop-editor.h		\
-	testgtk.1 		\
-	testgtk.css		\
-	testgtk2.css		\
-	3DRings.xpm		\
-	FilesQueue.xpm		\
-	Modeller.xpm		\
-	check-y.xpm		\
-	check-n.xpm		\
-	marble.xpm		\
-	test.xpm		\
-	check-y.xpm		\
-	check-n.xpm		\
-	test.xpm		\
-	merge-1.ui		\
-	merge-2.ui		\
-	merge-3.ui		\
-	gnome-textfile.png	\
-	makefile.msc		\
-	widget-factory.ui
+	background.png		\
+	enter.png		\
+	leave.png		\
+	login-button-active.png	\
+	login-button-normal.png	\
+	press.png
 
 -include $(top_srcdir)/git.mk
 

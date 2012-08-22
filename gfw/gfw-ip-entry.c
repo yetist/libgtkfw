@@ -230,12 +230,18 @@ static void ip_entry_render (GfwIpEntry *ipentry)
     text = g_string_new (NULL);
     for (i = 0; i < 4; i++)
     {
-        gchar *temp = g_strdup_printf ("%3i.", priv->address[i]);
+        gchar *temp;
+        if (priv->address[i] > 99)
+            temp = g_strdup_printf ("%i .", priv->address[i]);
+        else if (priv->address[i] > 9)
+            temp = g_strdup_printf (" %i .", priv->address[i]);
+        else
+            temp = g_strdup_printf (" %i  .", priv->address[i]);
         text = g_string_append (text, temp);
         g_free (temp);
     }
     /* Remove the trailing decimal place and add the string to the GtkEntry. */
-    text = g_string_truncate (text, 15);
+    text = g_string_truncate (text, 18);
     gtk_entry_set_text (GTK_ENTRY (ipentry), text->str);
     g_string_free (text, TRUE);
 }
@@ -244,18 +250,94 @@ static void ip_entry_render (GfwIpEntry *ipentry)
 static void ip_entry_move_cursor (GObject *entry, GParamSpec *spec)
 {
     gint cursor = gtk_editable_get_position (GTK_EDITABLE (entry));
-    if (cursor <= 3)
+    if (cursor <= 5)
+        //gtk_editable_select_region(GTK_EDITABLE (entry), 0, 3);
         gtk_editable_set_position(GTK_EDITABLE (entry), 3);
-    else if (cursor <= 7)
-        gtk_editable_set_position(GTK_EDITABLE (entry), 7);
-    else if (cursor <= 11)
-        gtk_editable_set_position(GTK_EDITABLE (entry), 11);
+    else if (cursor <= 10)
+        //gtk_editable_select_region(GTK_EDITABLE (entry), 4, 7);
+        gtk_editable_set_position(GTK_EDITABLE (entry), 8);
+    else if (cursor <= 15)
+        //gtk_editable_select_region(GTK_EDITABLE (entry), 8, 11);
+        gtk_editable_set_position(GTK_EDITABLE (entry), 13);
     else
-        gtk_editable_set_position(GTK_EDITABLE (entry), 15);
+        //gtk_editable_select_region(GTK_EDITABLE (entry), 12, 15);
+        gtk_editable_set_position(GTK_EDITABLE (entry), 18);
+}
+
+int get_next_number(GfwIpEntry *entry, int i, int pos, int value)
+{
+    /*
+     * 01234567890123456789
+     * |0123.5678.0123.5678|
+     * | 1  . 1  . 1  . 1  |
+     * | 12 . 12 . 12 . 12 |
+     * |123 .123 .123 .123 |
+     * 1, 2
+     * 2, 3
+     * 3, 3
+     *
+     * i=0; cursor=0-4
+     * i=1; cursor=5-9
+     * i=2; cursor=10-14
+     * i=3; cursor=15-19
+     */
+    const gchar *text;
+    GfwIpEntryPrivate *priv;
+    text = gtk_entry_get_text(GTK_ENTRY(entry));
+    priv = GFW_IP_ENTRY_GET_PRIVATE (entry);
+}
+
+static int get_number_bit(int num)
+{
+    if (num > 99)
+        return 3;
+    else if (num > 9)
+        return 2;
+    else
+        return 1;
 }
 
 /* Handle key presses of numbers, tabs, backspaces and returns. */
 static gboolean ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event)
+{
+    GfwIpEntryPrivate *priv;
+    priv = GFW_IP_ENTRY_GET_PRIVATE (entry);
+
+    guint k = event->keyval;
+    gint cursor,i, value;
+    if ((k >= GDK_0 && k <= GDK_9) || (k >= GDK_KP_0 && k <= GDK_KP_9))
+    {
+        cursor = floor(gtk_editable_get_position (GTK_EDITABLE (entry)) / 5);
+        i = gtk_editable_get_position (GTK_EDITABLE (entry));
+        g_printf("i=%d, cursor=%d\n", i, cursor);
+        return TRUE;
+    }
+    /* Move to the next number or wrap around to the first. */
+    else if (k == GDK_Tab)
+    {
+        cursor = (floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 5) + 1);
+        gtk_editable_set_position (GTK_EDITABLE (entry), (5 * (cursor % 5)) + 4);
+    }
+    /* Delete the last digit of the current number. This just divides the number by
+     * 10, relying on the fact that any remainder will be ignored. */
+    else if (k == GDK_BackSpace)
+    {
+        gint bit;
+        cursor = floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 5);
+        priv->address[cursor] /= 10;
+        bit = get_number_bit(priv->address[cursor]);
+        g_printf("bit=%d, pos=%d\n", bit, 5 * cursor + bit);
+        ip_entry_render (GFW_IP_ENTRY(entry));
+        gtk_editable_set_position (GTK_EDITABLE (entry), (5 * cursor) +  bit);
+        g_signal_emit_by_name ((gpointer) entry, "ip-changed");
+    }
+    /* Activate the GtkEntry widget, which corresponds to the activate signal. */
+    else if ((k == GDK_Return) || (k == GDK_KP_Enter))
+        gtk_widget_activate (GTK_WIDGET (entry));
+    return TRUE;
+}
+
+static gboolean _ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event)
 {
     GfwIpEntryPrivate *priv;
     priv = GFW_IP_ENTRY_GET_PRIVATE (entry);
@@ -266,18 +348,44 @@ static gboolean ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event)
      * done if the resulting number will be less than 255. */
     if ((k >= GDK_0 && k <= GDK_9) || (k >= GDK_KP_0 && k <= GDK_KP_9))
     {
-        cursor = floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 4);
+        cursor = floor(gtk_editable_get_position (GTK_EDITABLE (entry)) / 4);
         value = g_ascii_digit_value (event->string[0]);
         if ((priv->address[cursor] == 25) && (value > 5))
+        {
+            g_printf("cursor=%d, current=%d, press=%d\n", cursor, priv->address[cursor], value);
+            priv->address[cursor] = 255;
+            ip_entry_render (GFW_IP_ENTRY(entry));
+            g_signal_emit_by_name ((gpointer) entry, "ip-changed");
+            GtkWidget *dialog;
+            GtkWidget *toplevel = gtk_widget_get_toplevel(GTK_WIDGET(entry));
+            if (gtk_widget_is_toplevel (toplevel))
+                dialog = gtk_message_dialog_new (toplevel,
+                        GTK_DIALOG_DESTROY_WITH_PARENT |
+                        GTK_DIALOG_MODAL,
+                        GTK_MESSAGE_ERROR,
+                        GTK_BUTTONS_CLOSE,
+                        "%d is not a valid number. please set a number between %d and %d", value, priv->range[cursor][0], priv->range[cursor][1]);
+            else
+                dialog = gtk_message_dialog_new (NULL,
+                        GTK_DIALOG_DESTROY_WITH_PARENT |
+                        GTK_DIALOG_MODAL,
+                        GTK_MESSAGE_ERROR,
+                        GTK_BUTTONS_CLOSE,
+                        "%d is not a valid number. please set a number between %d and %d", value, priv->range[cursor][0], priv->range[cursor][1]);
+            g_signal_connect (dialog, "response", G_CALLBACK (gtk_widget_destroy), NULL);
+            gtk_window_present (GTK_WINDOW (dialog));
             return TRUE;
-                if (priv->address[cursor] < 26)
-                {
-                    priv->address[cursor] *= 10;
-                    priv->address[cursor] += value;
-                    ip_entry_render (GFW_IP_ENTRY(entry));
-                    gtk_editable_set_position (GTK_EDITABLE (entry), (4 * cursor) + 3);
-                    g_signal_emit_by_name ((gpointer) entry, "ip-changed");
-                }
+        }
+        if (priv->address[cursor] < 26)
+        {
+            priv->address[cursor] *= 10;
+            priv->address[cursor] += value;
+            g_printf("cur=%d, press=%d\n", priv->address[cursor], value);
+            ip_entry_render (GFW_IP_ENTRY(entry));
+            //gtk_editable_set_position (GTK_EDITABLE (entry), (4 * cursor) + 3);
+            gtk_editable_select_region(GTK_EDITABLE (entry), (4 * cursor), (4 * cursor) + 3);
+            g_signal_emit_by_name ((gpointer) entry, "ip-changed");
+        }
     }
     /* Move to the next number or wrap around to the first. */
     else if (k == GDK_Tab)

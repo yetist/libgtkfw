@@ -29,16 +29,16 @@ static void ip_address_changed(GfwIpEntry* entry)
 int main (int argc, char *argv[])
 {
 	GtkWidget *window, *ipaddress;
-	gint address[4] = { 1, 20, 35, 255 };
+	gint address[4] = { 123, 220, 135, 255 };
 	gtk_init (&argc, &argv);
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "MyIPAddress");
 	gtk_container_set_border_width (GTK_CONTAINER (window), 10);
 	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 	ipaddress = gfw_ip_entry_new ();
-	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 0, 1);
-	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 1, 20);
-	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 2, 35);
+	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 0, 25);
+	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 1, 202);
+	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 2, 235);
 	gfw_ip_entry_set_n_value(GFW_IP_ENTRY(ipaddress), 3, 255);
 	g_signal_connect (G_OBJECT (ipaddress), "ip-changed", G_CALLBACK(ip_address_changed), NULL);
 	gtk_container_add (GTK_CONTAINER (window), ipaddress);
