@@ -5,7 +5,7 @@ includedir=@includedir@
 
 Name: gtkfw-1.0
 Description: Gtk+ Feathur Widget Library
-Requires.private: gtk+-2.0
+Requires: gtk+-2.0
 Version: @VERSION@
 Libs: -L${libdir} -lgtkfw-1.0
 Cflags: -I${includedir}/libgtkfw-1.0

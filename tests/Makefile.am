@@ -2,9 +2,10 @@ include $(top_srcdir)/Makefile.decl
 
 AM_CPPFLAGS =				\
 	-I$(top_srcdir)			\
+	-I$(top_srcdir)/gfw		\
 	$(GTK_CFLAGS)
 
-DEPS = \
+TEST_DEPS = \
 	$(top_builddir)/gfw/libgtkfw-1.0.la
 
 LDADDS = \

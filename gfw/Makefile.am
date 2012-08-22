@@ -18,7 +18,7 @@ source_c = \
 	gfw-pie-chart.c
 
 gtkfwincludedir=$(includedir)/libgtkfw-1.0
-gtkfwinclude_HEADERS = gtkfw.h
+gtkfwinclude_HEADERS = gfw.h
 
 gfwincludedir=$(includedir)/libgtkfw-1.0/gfw
 gfwinclude_HEADERS = $(source_h)

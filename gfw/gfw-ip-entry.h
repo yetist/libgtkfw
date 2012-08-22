@@ -57,7 +57,7 @@ struct _GfwIpEntryClass
 };
 
 GType           gfw_ip_entry_get_type           (void) G_GNUC_CONST;
-GfwIpEntry*     gfw_ip_entry_new                (void);
+GtkWidget*      gfw_ip_entry_new                (void);
 
 void            gfw_ip_entry_set_inet_address   (GfwIpEntry *ipentry, GInetAddress *address);
 void            gfw_ip_entry_set_address        (GfwIpEntry *ipentry, guint8 address[4]);

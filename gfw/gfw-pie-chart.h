@@ -18,44 +18,37 @@
 #define GTK_PIE_CHART_H_INCLUDED
  
 #include <gdk/gdk.h>
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
  
 G_BEGIN_DECLS
- 
-#define GTK_PIE_CHART(obj)	   GTK_CHECK_CAST( obj, gfw_pie_chart_get_type(), GfwPieChart )
-#define GTK_PIE_CHART_CLASS(klass) GTK_CHECK_CLASS_CAST( klass, gfw_pie_chart_get_type(), GfwPieChartClass )
-#define GTK_IS_PIE_CHART(obj)	   GTK_CHECK_TYPE( obj, gfw_pie_chart_get_type() )
- 
-typedef struct GfwPieChart GfwPieChart;
-typedef struct GfwPieChartClass GfwPieChartClass;
- 
-typedef struct GfwPieSegment {
-  float sweep;
-  char *name;
-  float rgba[4];
-} GfwPieSegment;
- 
-struct GfwPieChart {
-  GtkWidget base;
- 
-  int width;
-  int height;
- 
-  float start_angle;
-  float sweep_factor;
-  float radius;
- 
-  GList *segments;
+
+#define GFW_TYPE_PIE_CHART              (gfw_pie_chart_get_type ())
+#define GFW_PIE_CHART(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), GFW_TYPE_PIE_CHART, GfwPieChart))
+#define GFW_PIE_CHART_CLASS(klass)      (G_TYPE_CHECK_CLASS_CAST ((klass), GFW_TYPE_PIE_CHART, GfwPieChartClass))
+#define GFW_IS_PIE_CHART(obj)           (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GFW_TYPE_PIE_CHART))
+#define GFW_IS_PIE_CHART_CLASS(klass)   (G_TYPE_CHECK_CLASS_TYPE ((klass), GFW_TYPE_PIE_CHART))
+#define GFW_PIE_CHART_GET_CLASS(obj)    (G_TYPE_INSTANCE_GET_CLASS ((obj), GFW_TYPE_PIE_CHART, GfwPieChartClass))
+
+typedef struct _GfwPieChart             GfwPieChart;
+typedef struct _GfwPieChartClass        GfwPieChartClass;
+
+struct _GfwPieChart
+{
+  GtkWidget      widget;
 };
- 
-struct GfwPieChartClass {
-  GtkWidgetClass parent_class;
+
+struct _GfwPieChartClass
+{
+  GtkWidgetClass     parent_class;
 };
+
+
+GType            gfw_pie_chart_get_type           (void) G_GNUC_CONST;
+GtkWidget*       gfw_pie_chart_new                (void);
+guint            gfw_pie_chart_add_segment        (GfwPieChart *pie, float sweep, const gchar *name, float *rgba);
+void             gfw_pie_chart_remove_segment     (GfwPieChart *pie, guint id );
+
  
-GtkType gfw_pie_chart_get_type();
-GtkWidget *gfw_pie_chart_new();
-guint gfw_pie_chart_add_segment( GfwPieChart *pie, float sweep, const gchar *name, float *rgba );
-void gfw_pie_chart_remove_segment( GfwPieChart *pie, guint id );
  
 G_END_DECLS
  

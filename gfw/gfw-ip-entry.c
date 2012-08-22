@@ -141,8 +141,7 @@ gfw_ip_entry_init (GfwIpEntry *ip_entry)
             G_CALLBACK (ip_entry_move_cursor), NULL);
 }
 
-GfwIpEntry*
-gfw_ip_entry_new (void)
+GtkWidget* gfw_ip_entry_new (void)
 {
     return g_object_new (GFW_TYPE_IP_ENTRY, NULL);
 }

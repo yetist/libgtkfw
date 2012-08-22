@@ -1,5 +1,5 @@
 #include <gtk/gtk.h>
-#include <gfw/gtkfw.h>
+#include <gfw.h>
 
 /* This is a callback function. The data arguments are ignored
  * in this example. More on callbacks below. */
@@ -93,13 +93,13 @@ int main( int argc, char *argv[] )
     ba = gdk_pixbuf_new_from_file("login-button-active.png", NULL);
 
     /* first button */
-    button = gfw_button_new_with_images(normal, "active-pixbuf", active, "prelight-pixbuf", prelight, NULL);
+    button = gfw_button_new_with_pixbufs(normal, "active-pixbuf", active, "prelight-pixbuf", prelight, NULL);
     gtk_widget_set_tooltip_text (button, "gfwbutton with 3 states: normal, active and prelight");
     g_signal_connect (button, "clicked", G_CALLBACK (hello), NULL);
     gtk_box_pack_start(GTK_BOX(vbox), button, TRUE, TRUE, 5);
 
     /* 2nd button */
-    button = gfw_button_new_with_images(bn, "active-pixbuf", ba, NULL);
+    button = gfw_button_new_with_pixbufs(bn, "active-pixbuf", ba, NULL);
     gtk_widget_set_tooltip_text (button, "gfwbutton with 2 states: normal and active");
     g_signal_connect (button, "clicked", G_CALLBACK (hello), NULL);
     gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 5);

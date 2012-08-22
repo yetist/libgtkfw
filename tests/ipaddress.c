@@ -20,7 +20,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * */
 
-#include <gfw/gtkfw.h>
+#include <gfw.h>
 
 static void ip_address_changed(GfwIpEntry* entry)
 {
