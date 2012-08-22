@@ -223,10 +223,6 @@ static gboolean gfw_button_query_tooltip (GtkWidget  *widget,
 
 	if (!keyboard_tip)
 	{
-		g_printf("query_tooltip(), x=%d, y=%d\n", x, y);
-		g_printf("tooltip(t):%s\n", gtk_widget_get_tooltip_text(widget));
-		g_printf("tooltip(m):%s\n", gtk_widget_get_tooltip_markup(widget));
-		//icon_pos = gtk_entry_get_icon_at_pos (entry, x, y);
 		if (priv->in_button)
 		{
 			gtk_tooltip_set_markup (tooltip, gtk_widget_get_tooltip_markup(widget));
@@ -234,26 +230,10 @@ static gboolean gfw_button_query_tooltip (GtkWidget  *widget,
 		}
 		else
 			return FALSE;
-		/*
-		if (icon_pos != -1)
-		{
-			if ((icon_info = priv->icons[icon_pos]) != NULL)
-			{
-				if (icon_info->tooltip)
-				{
-					gtk_tooltip_set_markup (tooltip, icon_info->tooltip);
-					return TRUE;
-				}
-
-				return FALSE;
-			}
-		}
-		*/
 	}
 
 	return GTK_WIDGET_CLASS (gfw_button_parent_class)->query_tooltip (widget, x, y, keyboard_tip, tooltip);
 }
-
 
 /* public functions below */
 
@@ -293,7 +273,6 @@ static gboolean gfw_button_press (GtkWidget *widget, GdkEventButton *event)
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
 
-	g_printf("call button_press\n");
 	if (event->button == 1)
 	{
 		if (priv->in_button && priv->pixbuf[GTK_STATE_ACTIVE] != NULL)
@@ -312,7 +291,6 @@ static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event)
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
 
-	g_printf("call button_release\n");
 	if (event->button == 1)
 	{
 		if (priv->in_button)
@@ -338,7 +316,6 @@ static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event)
 void gfw_button_clicked (GfwButton *button)
 {
   g_return_if_fail (GFW_IS_BUTTON (button));
-  g_printf("call button_clicked\n");
 
   g_signal_emit (button, button_signals[CLICKED], 0);
 }
@@ -349,7 +326,6 @@ static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *ev
 	GfwButtonPrivate *priv;
 	GtkWidget *event_widget;
 
-	g_printf("call enter_notify\n");
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
 
@@ -374,7 +350,6 @@ static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *ev
 
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
-	g_printf("call leave_notify\n");
 
 	event_widget = gtk_get_event_widget ((GdkEvent*) event);
 
@@ -436,8 +411,6 @@ static void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_
 
 	state = gtk_widget_get_state(widget);
 
-	g_printf("call state_changed, prev_stat=%d, current_stat=%d\n", previous_state, state);
-
 	gtk_widget_queue_draw (GTK_WIDGET (widget));
 }
 
@@ -450,8 +423,6 @@ static gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
 
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
-	g_print("call expose\n");
-	//state = gtk_widget_get_state(widget);
 	
 	GtkStyleContext *context;
 	GtkStateFlags state;
@@ -532,7 +503,6 @@ static gboolean gfw_button_expose (GtkWidget *widget, GdkEventExpose *event)
 
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
-	g_print("call expose\n");
 
 	area = event->area;
 
@@ -543,8 +513,6 @@ static gboolean gfw_button_expose (GtkWidget *widget, GdkEventExpose *event)
 		GdkPixbuf *pixbuf;
 		GdkRectangle image_bound;
 		GdkBitmap *bitmap;
-
-		g_printf("!!! erea :x=%d,y=%d,w=%d,h=%d\n", area.x, area.y, area.width , area.height);
 
 		image_bound.width = MIN(area.width, gdk_pixbuf_get_width(priv->pixbuf[state]));
 		image_bound.height = MIN(area.height, gdk_pixbuf_get_height(priv->pixbuf[state]));
