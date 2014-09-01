@@ -8,13 +8,13 @@ INCLUDES = 					\
 source_h = \
 	gfw-button.h	\
 	gfw-window.h	\
-	gfw-ip-entry.h	\
+	gfw-ip-entry.h
 	gfw-pie-chart.h
 
 source_c = \
 	gfw-button.c	\
 	gfw-window.c	\
-	gfw-ip-entry.c	\
+	gfw-ip-entry.c
 	gfw-pie-chart.c
 
 gtkfwincludedir=$(includedir)/libgtkfw-1.0

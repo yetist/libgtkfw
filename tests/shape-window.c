@@ -22,15 +22,12 @@
 
 #include <gfw.h>
 
-static void hello( GtkWidget *widget,
-                   gpointer   data )
+static void button_pressed(GtkWidget *widget, gpointer   data )
 {
-    g_print (">>>>>>Hello World\n");
+    g_print ("button pressed.\n");
 }
 
-static gboolean delete_event( GtkWidget *widget,
-                              GdkEvent  *event,
-                              gpointer   data )
+static gboolean delete_event(GtkWidget *widget, GdkEvent  *event, gpointer data)
 {
     g_print ("delete event occurred\n");
     return FALSE;
@@ -47,57 +44,30 @@ int main( int argc, char *argv[] )
 	GtkWidget *fixed;
 
     gtk_init (&argc, &argv);
-    window = gfw_window_new (GTK_WINDOW_TOPLEVEL);
+    window = gfw_window_new (GTK_WINDOW_POPUP);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
 
-	bg = gdk_pixbuf_new_from_file("background.png", NULL);
+	bg = gdk_pixbuf_new_from_file("clock.png", NULL);
 
 	gfw_window_set_background(GFW_WINDOW(window), bg);
 	gfw_window_set_transparent (GFW_WINDOW(window), TRUE);
 
     g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
     g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
-	
 
-#if 0
 	fixed = gtk_fixed_new();
 	gtk_container_add(GTK_CONTAINER(window), fixed);
 
-    normal = gdk_pixbuf_new_from_file("leave.png", NULL);
-    active = gdk_pixbuf_new_from_file("press.png", NULL);
-    prelight = gdk_pixbuf_new_from_file("enter.png", NULL);
+    normal = gdk_pixbuf_new_from_file("btn1.png", NULL);
+    active = gdk_pixbuf_new_from_file("btn2.png", NULL);
+    prelight = gdk_pixbuf_new_from_file("btn3.png", NULL);
 
-    /* first button */
     button = gfw_button_new_with_pixbufs(normal, "active-pixbuf", active, "prelight-pixbuf", prelight, NULL);
     gtk_widget_set_tooltip_text (button, "gfwbutton with 3 states: normal, active and prelight");
-    g_signal_connect (button, "clicked", G_CALLBACK (hello), NULL);
+    g_signal_connect (button, "clicked", G_CALLBACK (button_pressed), NULL);
 
-	gtk_fixed_put(fixed, button, 80, 50);
+	gtk_fixed_put(GTK_FIXED(fixed), button, 110, 70);
 	
-
-#else
-    vbox = gtk_vbox_new(FALSE, 5);
-    gtk_container_add (GTK_CONTAINER (window), vbox);
-
-    normal = gdk_pixbuf_new_from_file("leave.png", NULL);
-    active = gdk_pixbuf_new_from_file("press.png", NULL);
-    prelight = gdk_pixbuf_new_from_file("enter.png", NULL);
-
-    /* first button */
-    button = gfw_button_new_with_pixbufs(normal, "active-pixbuf", active, "prelight-pixbuf", prelight, NULL);
-    gtk_widget_set_tooltip_text (button, "gfwbutton with 3 states: normal, active and prelight");
-    g_signal_connect (button, "clicked", G_CALLBACK (hello), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), button, TRUE, TRUE, 5);
-
-    /* 2nd button */
-    bn = gdk_pixbuf_new_from_file("login-button-normal.png", NULL);
-    ba = gdk_pixbuf_new_from_file("login-button-active.png", NULL);
-    button = gfw_button_new_with_pixbufs(bn, "active-pixbuf", ba, NULL);
-    gtk_widget_set_tooltip_text (button, "gfwbutton with 2 states: normal and active");
-    g_signal_connect (button, "clicked", G_CALLBACK (hello), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 5);
-#endif
-
     gtk_widget_show_all (window);
     gtk_main ();
     return 0;

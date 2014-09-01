@@ -29,30 +29,30 @@ G_BEGIN_DECLS
 
 
 #define GFW_TYPE_WINDOW              (gfw_window_get_type ())
-#define GFW_WINDOW(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), GFW_TYPE_WINDOW, MagicWindow))
-#define GFW_WINDOW_CLASS(klass)      (G_TYPE_CHECK_CLASS_CAST ((klass), GFW_TYPE_WINDOW, MagicWindowClass))
+#define GFW_WINDOW(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), GFW_TYPE_WINDOW, GfwWindow))
+#define GFW_WINDOW_CLASS(klass)      (G_TYPE_CHECK_CLASS_CAST ((klass), GFW_TYPE_WINDOW, GfwWindowClass))
 #define GFW_IS_WINDOW(obj)           (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GFW_TYPE_WINDOW))
 #define GFW_IS_WINDOW_CLASS(klass)   (G_TYPE_CHECK_CLASS_TYPE ((klass), GFW_TYPE_WINDOW))
-#define GFW_WINDOW_GET_CLASS(obj)    (G_TYPE_INSTANCE_GET_CLASS ((obj), GFW_TYPE_WINDOW, MagicWindowClass))
+#define GFW_WINDOW_GET_CLASS(obj)    (G_TYPE_INSTANCE_GET_CLASS ((obj), GFW_TYPE_WINDOW, GfwWindowClass))
 
-typedef struct _MagicWindow             MagicWindow;
-typedef struct _MagicWindowClass        MagicWindowClass;
+typedef struct _GfwWindow             GfwWindow;
+typedef struct _GfwWindowClass        GfwWindowClass;
 
-struct _MagicWindow
+struct _GfwWindow
 {
   GtkWindow      window;
 };
 
-struct _MagicWindowClass
+struct _GfwWindowClass
 {
   GtkWindowClass     parent_class;
 };
 
 GType          gfw_window_get_type           (void) G_GNUC_CONST;
 GtkWidget*     gfw_window_new (GtkWindowType type);
-void           gfw_window_set_background (MagicWindow *window, GdkPixbuf *pixbuf);
-void           gfw_window_set_transparent (MagicWindow *window, gboolean transparent);
-void           gfw_window_set_size_fit_pixbuf (MagicWindow *window, gboolean is_fit);
+void           gfw_window_set_background (GfwWindow *window, GdkPixbuf *pixbuf);
+void           gfw_window_set_transparent (GfwWindow *window, gboolean transparent);
+void           gfw_window_set_size_fit_pixbuf (GfwWindow *window, gboolean is_fit);
 
 G_END_DECLS
 

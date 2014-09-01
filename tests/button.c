@@ -1,8 +1,6 @@
 #include <gtk/gtk.h>
 #include <gfw.h>
 
-/* This is a callback function. The data arguments are ignored
- * in this example. More on callbacks below. */
 static void hello( GtkWidget *widget,
                    gpointer   data )
 {
@@ -13,23 +11,11 @@ static gboolean delete_event( GtkWidget *widget,
                               GdkEvent  *event,
                               gpointer   data )
 {
-    /* If you return FALSE in the "delete_event" signal handler,
-     * GTK will emit the "destroy" signal. Returning TRUE means
-     * you don't want the window to be destroyed.
-     * This is useful for popping up 'are you sure you want to quit?'
-     * type dialogs. */
-
     g_print ("delete event occurred\n");
-
-    /* Change TRUE to FALSE and the main window will be destroyed with
-     * a "delete_event". */
-
     return FALSE;
 }
 
-/* Another callback */
-static void destroy( GtkWidget *widget,
-                     gpointer   data )
+static void destroy( GtkWidget *widget, gpointer   data )
 {
     gtk_main_quit ();
 }
@@ -37,13 +23,10 @@ static void destroy( GtkWidget *widget,
 #if GTK_CHECK_VERSION(3,0,0)
 static gboolean draw (GtkWidget *widget, cairo_t *cr)
 {
-	GdkPixbuf   *pixbuf = gdk_pixbuf_new_from_file("./background.png",NULL);
+	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("./background.png",NULL);
 	gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
-	//gdk_cairo_set_source_window(cr, widget->window, 0, 0);
 	cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 	cairo_paint(cr);
-	cairo_destroy(cr);
-
 	return FALSE;
 }
 #else
@@ -52,7 +35,6 @@ static gboolean expose(GtkWidget *widget, GdkEventExpose *event, gpointer userda
 	cairo_t *cr = gdk_cairo_create(widget->window);
 	GdkPixbuf   *pixbuf = gdk_pixbuf_new_from_file("./background.png",NULL);
 	gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
-	//gdk_cairo_set_source_window(cr, widget->window, 0, 0);
 	cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 	cairo_paint(cr);
 	cairo_destroy(cr);
@@ -74,9 +56,6 @@ int main( int argc, char *argv[] )
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
     g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
     g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
-    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
-    gtk_widget_set_app_paintable(window,TRUE); // --> important,if comment, the bg will be flushed again in gtk_widget_show(window);
-    gtk_widget_realize(window);
 #if GTK_CHECK_VERSION(3,0,0)
     g_signal_connect(G_OBJECT(window), "draw", G_CALLBACK(draw), NULL);
 #else

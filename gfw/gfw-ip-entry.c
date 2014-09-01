@@ -38,6 +38,17 @@ enum {
     PROP_IP4
 };
 
+#if GTK_CHECK_VERSION(3,0,0)
+#define GDK_0 GDK_KEY_0
+#define GDK_9 GDK_KEY_9
+#define GDK_KP_0 GDK_KEY_KP_0
+#define GDK_KP_9 GDK_KEY_KP_9
+#define GDK_Tab  GDK_KEY_Tab
+#define GDK_BackSpace  GDK_KEY_BackSpace
+#define GDK_Return GDK_KEY_Return
+#define GDK_KP_Enter GDK_KEY_KP_Enter
+#endif
+
 #define GFW_IP_ENTRY_GET_PRIVATE(obj)  (G_TYPE_INSTANCE_GET_PRIVATE((obj), GFW_TYPE_IP_ENTRY, GfwIpEntryPrivate))
 
 typedef struct _GfwIpEntryPrivate        GfwIpEntryPrivate;
@@ -58,6 +69,7 @@ static void gfw_ip_entry_get_property  (GObject          *object,
                                          GParamSpec       *pspec);
 static void ip_entry_render (GfwIpEntry *ipentry);
 static gboolean ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event);
+static gboolean _ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event);
 static void ip_entry_move_cursor (GObject *entry, GParamSpec *spec);
 
 static guint ip_entry_signals[LAST_SIGNAL] = {0};
@@ -129,14 +141,18 @@ gfw_ip_entry_init (GfwIpEntry *ip_entry)
 
 
     fd = pango_font_description_from_string ("Monospace");
+#if GTK_CHECK_VERSION(3,0,0)
+    gtk_widget_override_font (GTK_WIDGET(ip_entry), fd);
+#else
     gtk_widget_modify_font (GTK_WIDGET (ip_entry), fd);
+#endif
     ip_entry_render (ip_entry);
     pango_font_description_free (fd);
 
     /* The key-press-event signal will be used to filter out certain keys. We will
      * also monitor the cursor-position property so it can be moved correctly. */
     g_signal_connect (G_OBJECT (ip_entry), "key-press-event",
-            G_CALLBACK (ip_entry_key_pressed), NULL);
+            G_CALLBACK (_ip_entry_key_pressed), NULL);
     g_signal_connect (G_OBJECT (ip_entry), "notify::cursor-position",
             G_CALLBACK (ip_entry_move_cursor), NULL);
 }
@@ -359,7 +375,7 @@ static gboolean _ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event)
             GtkWidget *dialog;
             GtkWidget *toplevel = gtk_widget_get_toplevel(GTK_WIDGET(entry));
             if (gtk_widget_is_toplevel (toplevel))
-                dialog = gtk_message_dialog_new (toplevel,
+                dialog = gtk_message_dialog_new (GTK_WINDOW(toplevel),
                         GTK_DIALOG_DESTROY_WITH_PARENT |
                         GTK_DIALOG_MODAL,
                         GTK_MESSAGE_ERROR,
@@ -397,10 +413,20 @@ static gboolean _ip_entry_key_pressed (GtkEntry *entry, GdkEventKey *event)
      * 10, relying on the fact that any remainder will be ignored. */
     else if (k == GDK_BackSpace)
     {
-        cursor = floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 4);
+        /*
+        cursor = floor(gtk_editable_get_position (GTK_EDITABLE (entry)) / 4);
         priv->address[cursor] /= 10;
         ip_entry_render (GFW_IP_ENTRY(entry));
         gtk_editable_set_position (GTK_EDITABLE (entry), (4 * cursor) + 3);
+        g_signal_emit_by_name ((gpointer) entry, "ip-changed");
+        */
+        gint bit;
+        cursor = floor (gtk_editable_get_position (GTK_EDITABLE (entry)) / 5);
+        priv->address[cursor] /= 10;
+        bit = get_number_bit(priv->address[cursor]);
+        g_printf("bit=%d, pos=%d\n", bit, 5 * cursor + bit);
+        ip_entry_render (GFW_IP_ENTRY(entry));
+        gtk_editable_set_position (GTK_EDITABLE (entry), (5 * cursor) +  bit);
         g_signal_emit_by_name ((gpointer) entry, "ip-changed");
     }
     /* Activate the GtkEntry widget, which corresponds to the activate signal. */

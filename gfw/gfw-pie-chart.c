@@ -20,7 +20,7 @@
 #include <math.h>
 #include <glib.h>
 #include <glib-object.h>
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 #include <cairo.h>
 #include "gfw-pie-chart.h"
 
@@ -99,7 +99,6 @@ gfw_pie_chart_init (GfwPieChart *pie_chart)
 {
     GfwPieChartPrivate *priv;
     priv = GFW_PIE_CHART_GET_PRIVATE (pie_chart);
-
 }
 
 GtkWidget*

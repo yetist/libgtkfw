@@ -33,35 +33,34 @@ enum {
 	PROP_SIZE_FIT_PIXBUF,
 };
 
-#define GFW_WINDOW_GET_PRIVATE(obj)  (G_TYPE_INSTANCE_GET_PRIVATE((obj), GFW_TYPE_WINDOW, MagicWindowPrivate))
+#define GFW_WINDOW_GET_PRIVATE(obj)  (G_TYPE_INSTANCE_GET_PRIVATE((obj), GFW_TYPE_WINDOW, GfwWindowPrivate))
 
-typedef struct _MagicWindowPrivate        MagicWindowPrivate;
+typedef struct _GfwWindowPrivate        GfwWindowPrivate;
 
-struct _MagicWindowPrivate
+struct _GfwWindowPrivate
 {
 	GdkPixbuf *background;
 	gboolean transparent;
 	gboolean size_fit_pixbuf;
 };
 
-static void gfw_window_set_property  (GObject          *object,
-                                         guint             prop_id,
-                                         const GValue     *value,
-                                         GParamSpec       *pspec);
-static void gfw_window_get_property  (GObject          *object,
-                                         guint             prop_id,
-                                         GValue           *value,
-                                         GParamSpec       *pspec);
-
+static void gfw_window_set_property  (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
+static void gfw_window_get_property  (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
 static void gfw_window_finalize (GObject *object);
-static gint gfw_window_expose (GtkWidget *widget, GdkEventExpose *event);
+#if GTK_CHECK_VERSION(3,0,0)
+static void gfw_window_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width);
+static void gfw_window_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height);
+static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr);
+#else
+static gboolean gfw_window_expose (GtkWidget *widget, GdkEventExpose *event);
 static void gfw_window_size_request (GtkWidget *widget, GtkRequisition *requisition);
-void gfw_window_set_background (MagicWindow *window, GdkPixbuf *pixbuf);
+#endif
+void gfw_window_set_background (GfwWindow *window, GdkPixbuf *pixbuf);
 
-G_DEFINE_TYPE (MagicWindow, gfw_window, GTK_TYPE_WINDOW);
+G_DEFINE_TYPE (GfwWindow, gfw_window, GTK_TYPE_WINDOW);
 
 static void
-gfw_window_class_init (MagicWindowClass *class)
+gfw_window_class_init (GfwWindowClass *class)
 {
     GObjectClass *object_class = G_OBJECT_CLASS (class);
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (class);
@@ -70,8 +69,14 @@ gfw_window_class_init (MagicWindowClass *class)
     object_class->get_property = gfw_window_get_property;
 	object_class->finalize = gfw_window_finalize;
 
+#if GTK_CHECK_VERSION(3,0,0)
+	widget_class->draw = gfw_window_draw;
+	widget_class->get_preferred_width = gfw_window_get_preferred_width;
+	widget_class->get_preferred_height = gfw_window_get_preferred_height;
+#else
 	widget_class->expose_event = gfw_window_expose;
 	widget_class->size_request = gfw_window_size_request;
+#endif
 
 	g_object_class_install_property (object_class,
 			PROP_BACKGROUND,
@@ -95,13 +100,13 @@ gfw_window_class_init (MagicWindowClass *class)
 				FALSE,
 				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 
-    g_type_class_add_private (class, sizeof (MagicWindowPrivate));
+    g_type_class_add_private (class, sizeof (GfwWindowPrivate));
 }
 
 static void
-gfw_window_init (MagicWindow *window)
+gfw_window_init (GfwWindow *window)
 {
-    MagicWindowPrivate *priv;
+    GfwWindowPrivate *priv;
 
     priv = GFW_WINDOW_GET_PRIVATE (window);
 	priv->background = NULL;
@@ -111,8 +116,8 @@ gfw_window_init (MagicWindow *window)
 
 static void gfw_window_finalize (GObject *object)
 {
-	MagicWindow *window;
-    MagicWindowPrivate *priv;
+	GfwWindow *window;
+    GfwWindowPrivate *priv;
 
 	window = GFW_WINDOW (object);
     priv = GFW_WINDOW_GET_PRIVATE (window);
@@ -124,7 +129,7 @@ static void gfw_window_finalize (GObject *object)
 
 GtkWidget* gfw_window_new (GtkWindowType type)
 {
-	MagicWindow *window;
+	GfwWindow *window;
 	g_return_val_if_fail (type >= GTK_WINDOW_TOPLEVEL && type <= GTK_WINDOW_POPUP, NULL);
 
 	window = g_object_new (GFW_TYPE_WINDOW, "type", type, NULL);
@@ -137,8 +142,8 @@ gfw_window_set_property (GObject      *object,
                             const GValue *value,
                             GParamSpec   *pspec)
 {
-    MagicWindow *window;
-    MagicWindowPrivate *priv;
+    GfwWindow *window;
+    GfwWindowPrivate *priv;
 
     window = GFW_WINDOW (object);
     priv = GFW_WINDOW_GET_PRIVATE (window);
@@ -166,8 +171,8 @@ gfw_window_get_property (GObject      *object,
                             GValue       *value,
                             GParamSpec   *pspec)
 {
-    MagicWindow *window;
-    MagicWindowPrivate *priv;
+    GfwWindow *window;
+    GfwWindowPrivate *priv;
 
     window = GFW_WINDOW (object);
     priv = GFW_WINDOW_GET_PRIVATE (window);
@@ -189,10 +194,61 @@ gfw_window_get_property (GObject      *object,
     }
 }
 
+#if GTK_CHECK_VERSION(3,0,0)
+static void gfw_window_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width)
+{
+	GtkRequisition requisition;
+	GfwWindowPrivate *priv;
+
+	priv = GFW_WINDOW_GET_PRIVATE (widget);
+
+	*minimal_width = *natural_width = gdk_pixbuf_get_width(priv->background);
+}
+
+static void gfw_window_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height)
+{
+	GtkRequisition requisition;
+	GfwWindowPrivate *priv;
+
+	priv = GFW_WINDOW_GET_PRIVATE (widget);
+
+	*minimal_height = *natural_height = gdk_pixbuf_get_height(priv->background);
+}
+
+static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr)
+{
+	GfwWindow *window;
+	GfwWindowPrivate *priv;
+
+	window = GFW_WINDOW (widget);
+	priv = GFW_WINDOW_GET_PRIVATE (window);
+
+	if (priv->background != NULL)
+	{
+		cairo_surface_t *surface;
+		surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 1, NULL);
+		if (priv->transparent)
+		{
+			cairo_region_t *region;
+			region = gdk_cairo_region_create_from_surface (surface);
+			gdk_window_shape_combine_region (GDK_WINDOW(gtk_widget_get_window(widget)), region, 0, 0);
+			cairo_region_destroy(region);
+		}
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+		cairo_set_source_surface (cr, surface, 0, 0);
+		cairo_paint(cr);
+	}
+
+	if (GTK_WIDGET_CLASS (gfw_window_parent_class)->draw)
+		GTK_WIDGET_CLASS (gfw_window_parent_class)->draw(widget, cr);
+
+	return FALSE;
+}
+#else
 static void gfw_window_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
-	MagicWindow *window;
-	MagicWindowPrivate *priv;
+	GfwWindow *window;
+	GfwWindowPrivate *priv;
 	GtkBin *bin;
 
 	window = GFW_WINDOW (widget);
@@ -224,10 +280,10 @@ static void gfw_window_size_request (GtkWidget *widget, GtkRequisition *requisit
 	}
 }
 
-static gint gfw_window_expose (GtkWidget *widget, GdkEventExpose *event)
+static gboolean gfw_window_expose (GtkWidget *widget, GdkEventExpose *event)
 {
-    MagicWindow *window;
-    MagicWindowPrivate *priv;
+    GfwWindow *window;
+    GfwWindowPrivate *priv;
 
     window = GFW_WINDOW (widget);
     priv = GFW_WINDOW_GET_PRIVATE (window);
@@ -255,10 +311,11 @@ static gint gfw_window_expose (GtkWidget *widget, GdkEventExpose *event)
 
   return FALSE;
 }
+#endif
 
-void gfw_window_set_background (MagicWindow *window, GdkPixbuf *pixbuf)
+void gfw_window_set_background (GfwWindow *window, GdkPixbuf *pixbuf)
 {
-    MagicWindowPrivate *priv;
+    GfwWindowPrivate *priv;
 
 	g_return_if_fail (GFW_IS_WINDOW (window));
 	g_return_if_fail (GDK_IS_PIXBUF (pixbuf));
@@ -277,9 +334,9 @@ void gfw_window_set_background (MagicWindow *window, GdkPixbuf *pixbuf)
 
 }
 
-void gfw_window_set_transparent (MagicWindow *window, gboolean transparent)
+void gfw_window_set_transparent (GfwWindow *window, gboolean transparent)
 {
-    MagicWindowPrivate *priv;
+    GfwWindowPrivate *priv;
 
 	g_return_if_fail (GFW_IS_WINDOW (window));
 
@@ -294,9 +351,9 @@ void gfw_window_set_transparent (MagicWindow *window, gboolean transparent)
 	g_object_notify (G_OBJECT (window), "transparent");
 }
 
-void gfw_window_set_size_fit_pixbuf (MagicWindow *window, gboolean is_fit)
+void gfw_window_set_size_fit_pixbuf (GfwWindow *window, gboolean is_fit)
 {
-    MagicWindowPrivate *priv;
+    GfwWindowPrivate *priv;
 
 	g_return_if_fail (GFW_IS_WINDOW (window));
 

@@ -242,7 +242,11 @@ GtkWidget* gfw_button_new (GdkPixbuf *pixbuf)
 	GtkWidget *widget;
 	widget = g_object_new (GFW_TYPE_BUTTON, "normal-pixbuf", pixbuf, NULL);
 	gtk_widget_set_events(widget, GDK_MOTION_NOTIFY | GDK_BUTTON_PRESS | GDK_BUTTON_RELEASE | GDK_ENTER_NOTIFY | GDK_LEAVE_NOTIFY);
+#if GTK_CHECK_VERSION(3,0,0)
+	gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+#else
 	gtk_widget_set_state(widget, GTK_STATE_NORMAL);
+#endif
 	return widget;
 }
 
@@ -261,7 +265,11 @@ GtkWidget* gfw_button_new_with_pixbufs (GdkPixbuf *pixbuf, const gchar *first_pr
 	va_start (var_args, first_property_name);
 	g_object_set_valist (G_OBJECT (widget), first_property_name, var_args);
 	va_end (var_args);
+#if GTK_CHECK_VERSION(3,0,0)
+	gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+#else
 	gtk_widget_set_state(widget, GTK_STATE_NORMAL);
+#endif
 	return widget;
 }
 
@@ -277,7 +285,11 @@ static gboolean gfw_button_press (GtkWidget *widget, GdkEventButton *event)
 	{
 		if (priv->in_button && priv->pixbuf[GTK_STATE_ACTIVE] != NULL)
 		{
+#if GTK_CHECK_VERSION(3,0,0)
+			gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_ACTIVE, TRUE);
+#else
 			gtk_widget_set_state(widget, GTK_STATE_ACTIVE);
+#endif
 		}
 	}
 	return TRUE;
@@ -297,17 +309,29 @@ static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event)
 		{
 			if (priv->pixbuf[GTK_STATE_PRELIGHT] != NULL)
 			{
+#if GTK_CHECK_VERSION(3,0,0)
+				gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_PRELIGHT, TRUE);
+#else
 				gtk_widget_set_state(widget, GTK_STATE_PRELIGHT);
+#endif
 			}
 			else
 			{
+#if GTK_CHECK_VERSION(3,0,0)
+				gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+#else
 				gtk_widget_set_state(widget, GTK_STATE_NORMAL);
+#endif
 			}
 			gfw_button_clicked(button);
 		}
 		else
 		{
+#if GTK_CHECK_VERSION(3,0,0)
+			gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+#else
 			gtk_widget_set_state(widget, GTK_STATE_NORMAL);
+#endif
 		}
 	}
 	return TRUE;
@@ -337,7 +361,11 @@ static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *ev
 	}
 	if (priv->in_button && priv->pixbuf[GTK_STATE_PRELIGHT] != NULL)
 	{
+#if GTK_CHECK_VERSION(3,0,0)
+		gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_PRELIGHT, TRUE);
+#else
 		gtk_widget_set_state(widget, GTK_STATE_PRELIGHT);
+#endif
 	}
 	return FALSE;
 }
@@ -359,7 +387,11 @@ static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *ev
 	}
 	if (!priv->in_button)
 	{
+#if GTK_CHECK_VERSION(3,0,0)
+		gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+#else
 		gtk_widget_set_state(widget, GTK_STATE_NORMAL);
+#endif
 	}
 	return FALSE;
 }
@@ -404,12 +436,9 @@ static void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
-	GtkStateType state;
 
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
-
-	state = gtk_widget_get_state(widget);
 
 	gtk_widget_queue_draw (GTK_WIDGET (widget));
 }
@@ -419,76 +448,37 @@ static gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
-	//GtkStateType state;
+	GdkRectangle area;
+	GtkStateType state;
 
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
-	
-	GtkStyleContext *context;
-	GtkStateFlags state;
-	GtkBorder padding;
 
-	context = gtk_widget_get_style_context (widget);
-	state = gtk_widget_get_state_flags (widget);
-	gtk_style_context_get_padding (context, state, &padding);
+	state = gtk_widget_get_state(widget);
 
-	cairo_save (cr);
+	if (gtk_widget_get_mapped (widget))
+	{
+		GdkPixbuf *pixbuf;
+		GdkRectangle image_bound;
 
+		image_bound.width = gdk_pixbuf_get_width(priv->pixbuf[state]);
+		image_bound.height = gdk_pixbuf_get_height(priv->pixbuf[state]);
 
-	gint x, y;
-	gint width, height;
-	gint extent;
+		pixbuf = gdk_pixbuf_new_subpixbuf(priv->pixbuf[state], area.x, area.y, image_bound.width, image_bound.height);
 
-	context = gtk_widget_get_style_context (widget);
+		cairo_surface_t *surface;
+		cairo_region_t *region;
 
-	width = gtk_widget_get_allocated_width (widget);
-	height = gtk_widget_get_allocated_height (widget);
+		surface = gdk_cairo_surface_create_from_pixbuf (pixbuf, 1, NULL);
+		region = gdk_cairo_region_create_from_surface (surface);
+		gdk_window_shape_combine_region (GDK_WINDOW(gtk_widget_get_window(widget)), region, 0, 0);
+		cairo_region_destroy(region);
+		cairo_set_source_surface (cr, surface, 0, 0);
+		cairo_paint(cr);
 
-#define PAD 3
-	extent = MIN (width - 2 * PAD, height - 2 * PAD);
-	x = PAD;
-	y = PAD;
-
-	gtk_render_arrow (context, cr, G_PI / 2, x, y, extent);
-
-
-//  if (gtk_widget_get_mapped (widget))
-  {
-	  GdkPixbuf *pixbuf;
-	  cairo_surface_t *mask;
-	  cairo_region_t *mask_region;
-
-	 // cairo_save(cr);
-
-	 // cairo_set_source_rgb (cr, 0, 0, 0);
-	 // cairo_rectangle (cr, 0.25, 0.25, 0.5, 0.5);
-	 // cairo_fill (cr);
-
-
-//	  pixbuf = priv->pixbuf[state];
-//	  GdkRectangle image_bound;
-//	  image_bound.width = MIN(gtk_widget_get_allocated_width (widget), gdk_pixbuf_get_width(priv->pixbuf[state]));
-//	  image_bound.height = MIN(gtk_widget_get_allocated_height (widget), gdk_pixbuf_get_height(priv->pixbuf[state]));
-//
-//	  pixbuf = gdk_pixbuf_new_subpixbuf(priv->pixbuf[state], 0, 0 , image_bound.width, image_bound.height);
-//	  mask = cairo_image_surface_create (CAIRO_FORMAT_A1,
-//			  gdk_pixbuf_get_width (pixbuf),
-//			  gdk_pixbuf_get_height (pixbuf));
-//	  mask_region = gdk_cairo_region_create_from_surface (mask);
-//	  gtk_widget_shape_combine_region (widget, mask_region);
-//	  cairo_surface_destroy (mask);
-//	  cairo_region_destroy (mask_region);
-//
-//	  gdk_cairo_set_source_pixbuf(cr, pixbuf, 0,0);
-//	  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-//	  cairo_paint(cr);
-
-	 // cairo_restore(cr);
-	  //cairo_destroy(cr);
-  }
-    gtk_style_context_restore (context);
-	  cairo_restore (cr);
-
+		if (pixbuf)
+			g_object_unref (pixbuf);
+	}
 	return FALSE;
 }
 #else

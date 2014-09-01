@@ -47,8 +47,6 @@ GType            gfw_pie_chart_get_type           (void) G_GNUC_CONST;
 GtkWidget*       gfw_pie_chart_new                (void);
 guint            gfw_pie_chart_add_segment        (GfwPieChart *pie, float sweep, const gchar *name, float *rgba);
 void             gfw_pie_chart_remove_segment     (GfwPieChart *pie, guint id );
-
- 
  
 G_END_DECLS
  
