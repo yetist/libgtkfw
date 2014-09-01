@@ -66,6 +66,12 @@ int main( int argc, char *argv[] )
     GtkWidget *zoom;
     GtkWidget *vbox;
 
+	GdkCursor *cursor;
+	GdkDeviceManager *manager;
+	GdkDevice *pointer, *keyboard;
+	GdkGrabStatus res;
+
+
     gtk_init (&argc, &argv);
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
@@ -73,6 +79,36 @@ int main( int argc, char *argv[] )
     g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
     g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (window, "motion-notify-event", G_CALLBACK (on_mouse_move), NULL);
+
+	cursor = gdk_cursor_new (GDK_CROSSHAIR);
+	manager = gdk_display_get_device_manager (gdk_display_get_default ());
+	pointer = gdk_device_manager_get_client_pointer (manager);
+	keyboard = gdk_device_get_associated_device (pointer);
+
+	res = gdk_device_grab (pointer, gtk_widget_get_window (window),
+			GDK_OWNERSHIP_NONE, FALSE,
+			GDK_POINTER_MOTION_MASK |
+			GDK_BUTTON_PRESS_MASK |
+			GDK_BUTTON_RELEASE_MASK,
+			cursor, GDK_CURRENT_TIME);
+
+	if (res != GDK_GRAB_SUCCESS)
+	{
+		g_object_unref (cursor);
+		goto out;
+	}
+
+	res = gdk_device_grab (keyboard, gtk_widget_get_window (window),
+			GDK_OWNERSHIP_NONE, FALSE,
+			GDK_KEY_PRESS_MASK |
+			GDK_KEY_RELEASE_MASK,
+			NULL, GDK_CURRENT_TIME);
+	if (res != GDK_GRAB_SUCCESS)
+	{
+		gdk_device_ungrab (pointer, GDK_CURRENT_TIME);
+		g_object_unref (cursor);
+		goto out;
+	}
 
     vbox = gtk_vbox_new(FALSE, 5);
     gtk_container_add (GTK_CONTAINER (window), vbox);
@@ -90,5 +126,6 @@ int main( int argc, char *argv[] )
 
     gtk_widget_show_all (window);
     gtk_main ();
+out:
     return 0;
 }
