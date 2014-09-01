@@ -8,12 +8,16 @@ INCLUDES = 					\
 source_h = \
 	gfw-button.h	\
 	gfw-window.h	\
-	gfw-ip-entry.h
+	gfw-ip-entry.h	\
+	gfw-color.h	\
+	gfw-zoom.h
 	gfw-pie-chart.h
 
 source_c = \
 	gfw-button.c	\
 	gfw-window.c	\
+	gfw-color.c	\
+	gfw-zoom.c	\
 	gfw-ip-entry.c
 	gfw-pie-chart.c
 

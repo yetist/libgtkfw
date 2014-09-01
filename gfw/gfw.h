@@ -29,6 +29,8 @@
 #include <gfw/gfw-window.h>
 #include <gfw/gfw-ip-entry.h>
 #include <gfw/gfw-pie-chart.h>
+#include <gfw/gfw-color.h>
+#include <gfw/gfw-zoom.h>
 
 #undef __GTKFW_H_INSIDE__
 
