@@ -52,13 +52,13 @@ dnl ================================================================
 dnl  Check for gtk
 dnl ================================================================
 AC_ARG_ENABLE([gtk3],
-	      AS_HELP_STRING([--disable-gtk3],[Build for gtk2 version. (default: enabled, for gtk3)]),
-	      [enable_gtk3=$enableval],
-	      [enable_gtk3=yes])
+              AS_HELP_STRING([--disable-gtk3],[Build for gtk2 version. (default: enabled, for gtk3)]),
+              [enable_gtk3=$enableval],
+              [enable_gtk3=yes])
 if test "x$enable_gtk3" != "xno"; then
-	PKG_CHECK_MODULES(GTK, [ gtk+-3.0 >= 3.12 ])
+       PKG_CHECK_MODULES(GTK, [ gtk+-3.0 >= 3.12 ])
 else
-	PKG_CHECK_MODULES(GTK, [ gtk+-2.0 >= 2.24 ])
+       PKG_CHECK_MODULES(GTK, [ gtk+-2.0 >= 2.24 ])
 fi
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)

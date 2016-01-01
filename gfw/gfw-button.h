@@ -37,6 +37,14 @@ G_BEGIN_DECLS
 typedef struct _GfwButton             GfwButton;
 typedef struct _GfwButtonClass        GfwButtonClass;
 
+typedef enum
+{
+  GFW_STATE_NORMAL,
+  GFW_STATE_ACTIVE,
+  GFW_STATE_PRELIGHT,
+  GFW_STATE_INSENSITIVE
+} GfwStateType;
+
 struct _GfwButton
 {
   GtkEventBox      eventbox;
@@ -51,7 +59,7 @@ struct _GfwButtonClass
 GType               gfw_button_get_type           (void) G_GNUC_CONST;
 GtkWidget*          gfw_button_new                (GdkPixbuf *pixbuf);
 GtkWidget*          gfw_button_new_with_pixbufs   (GdkPixbuf *pixbuf, const gchar *first_property_name, ...);
-void                gfw_button_set_pixbuf         (GfwButton *button, GtkStateType state, GdkPixbuf *pixbuf);
+void                gfw_button_set_pixbuf         (GfwButton *button, GfwStateType state, GdkPixbuf *pixbuf);
 
 G_END_DECLS
 

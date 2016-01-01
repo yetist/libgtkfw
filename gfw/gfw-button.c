@@ -31,7 +31,8 @@ enum {
 	PROP_0,
 	PROP_NORMAL_PIXBUF,
 	PROP_ACTIVE_PIXBUF,
-	PROP_PRELIGHT_PIXBUF
+	PROP_PRELIGHT_PIXBUF,
+	PROP_INSENSITIVE_PIXBUF
 };
 
 #define GFW_BUTTON_GET_PRIVATE(obj)  (G_TYPE_INSTANCE_GET_PRIVATE((obj), GFW_TYPE_BUTTON, GfwButtonPrivate))
@@ -41,24 +42,24 @@ typedef struct _GfwButtonPrivate        GfwButtonPrivate;
 struct _GfwButtonPrivate
 {
 	guint in_button:1;
-	GdkPixbuf *pixbuf[3];
+	GdkPixbuf *pixbuf[4];
 };
 
 static void gfw_button_set_property  (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
 static void gfw_button_get_property  (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
 static gboolean gfw_button_press (GtkWidget *widget, GdkEventButton *event);
 static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event);
-static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *event);
-static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *event);
+gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *event);
+gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *event);
 static gboolean gfw_button_query_tooltip (GtkWidget  *widget, gint x, gint y, gboolean keyboard_tip, GtkTooltip *tooltip);
 
-static void gfw_button_state_changed   (GtkWidget *widget, GtkStateType previous_state);
+void gfw_button_state_changed   (GtkWidget *widget, GtkStateType previous_state);
 void gfw_button_clicked (GfwButton *button);
 
 #if GTK_CHECK_VERSION(3,0,0)
-static void gfw_button_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width);
-static void gfw_button_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height);
-static gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr);
+void gfw_button_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width);
+void gfw_button_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height);
+gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr);
 #else
 static void gfw_button_size_request (GtkWidget *widget, GtkRequisition *requisition);
 static gboolean gfw_button_expose (GtkWidget *widget, GdkEventExpose *event);
@@ -111,25 +112,34 @@ static void gfw_button_class_init (GfwButtonClass *class)
 			PROP_NORMAL_PIXBUF,
 			g_param_spec_object ("normal-pixbuf",
 				"Normal Image",
-				"A GdkImage to display",
+				"A GdkPixbuf to display",
 				GDK_TYPE_PIXBUF,
 				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 
 	g_object_class_install_property (gobject_class,
 			PROP_ACTIVE_PIXBUF,
 			g_param_spec_object ("active-pixbuf",
-				"Normal Image",
-				"A GdkImage to display",
+				"Active Image",
+				"A GdkPixbuf to display",
 				GDK_TYPE_PIXBUF,
 				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 
 	g_object_class_install_property (gobject_class,
 			PROP_PRELIGHT_PIXBUF,
 			g_param_spec_object ("prelight-pixbuf",
-				"Normal Image",
-				"A GdkImage to display",
+				"Prelight Image",
+				"A GdkPixbuf to display",
 				GDK_TYPE_PIXBUF,
 				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
+
+	g_object_class_install_property (gobject_class,
+			PROP_INSENSITIVE_PIXBUF,
+			g_param_spec_object ("insensitive-pixbuf",
+				"Insensitive Image",
+				"A GdkPixbuf to display",
+				GDK_TYPE_PIXBUF,
+				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
+
 
 	g_type_class_add_private (class, sizeof (GfwButtonPrivate));
 }
@@ -139,16 +149,17 @@ static void gfw_button_init (GfwButton *button)
 	GfwButtonPrivate *priv;
 	priv = GFW_BUTTON_GET_PRIVATE (button);
 	priv->in_button = FALSE;
-	priv->pixbuf[GTK_STATE_NORMAL] = NULL;
-	priv->pixbuf[GTK_STATE_ACTIVE] = NULL;
-	priv->pixbuf[GTK_STATE_PRELIGHT] = NULL;
+	priv->pixbuf[GFW_STATE_NORMAL] = NULL;
+	priv->pixbuf[GFW_STATE_ACTIVE] = NULL;
+	priv->pixbuf[GFW_STATE_PRELIGHT] = NULL;
+	priv->pixbuf[GFW_STATE_INSENSITIVE] = NULL;
 }
 
-void gfw_button_set_pixbuf(GfwButton *button, GtkStateType state, GdkPixbuf *pixbuf)
+void  gfw_button_set_pixbuf (GfwButton *button, GfwStateType state, GdkPixbuf *pixbuf)
 {
 	g_return_if_fail (GFW_IS_BUTTON(button));
 	g_return_if_fail (GDK_IS_PIXBUF(pixbuf));
-	g_return_if_fail (state >= GTK_STATE_NORMAL && state <= GTK_STATE_PRELIGHT);
+	g_return_if_fail (state >= GFW_STATE_NORMAL && state <= GFW_STATE_INSENSITIVE);
 
 	GfwButtonPrivate *priv;
 	priv = GFW_BUTTON_GET_PRIVATE (button);
@@ -170,13 +181,16 @@ static void gfw_button_set_property (GObject *object, guint prop_id, const GValu
 	switch (prop_id)
 	{
 		case PROP_NORMAL_PIXBUF:
-			gfw_button_set_pixbuf(button, GTK_STATE_NORMAL, g_value_get_object(value));
+			gfw_button_set_pixbuf(button, GFW_STATE_NORMAL, g_value_get_object(value));
 			break;
 		case PROP_ACTIVE_PIXBUF:
-			gfw_button_set_pixbuf(button, GTK_STATE_ACTIVE, g_value_get_object(value));
+			gfw_button_set_pixbuf(button, GFW_STATE_ACTIVE, g_value_get_object(value));
 			break;
 		case PROP_PRELIGHT_PIXBUF:
-			gfw_button_set_pixbuf(button, GTK_STATE_PRELIGHT, g_value_get_object(value));
+			gfw_button_set_pixbuf(button, GFW_STATE_PRELIGHT, g_value_get_object(value));
+			break;
+		case PROP_INSENSITIVE_PIXBUF:
+			gfw_button_set_pixbuf(button, GFW_STATE_INSENSITIVE, g_value_get_object(value));
 			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -195,13 +209,16 @@ static void gfw_button_get_property (GObject *object, guint prop_id, GValue *val
 	switch (prop_id)
 	{
 		case PROP_NORMAL_PIXBUF:
-			g_value_set_object (value, priv->pixbuf[GTK_STATE_NORMAL]);
+			g_value_set_object (value, priv->pixbuf[GFW_STATE_NORMAL]);
 			break;
 		case PROP_ACTIVE_PIXBUF:
-			g_value_set_object (value, priv->pixbuf[GTK_STATE_ACTIVE]);
+			g_value_set_object (value, priv->pixbuf[GFW_STATE_ACTIVE]);
 			break;
 		case PROP_PRELIGHT_PIXBUF:
-			g_value_set_object (value, priv->pixbuf[GTK_STATE_PRELIGHT]);
+			g_value_set_object (value, priv->pixbuf[GFW_STATE_PRELIGHT]);
+			break;
+		case PROP_INSENSITIVE_PIXBUF:
+			g_value_set_object (value, priv->pixbuf[GFW_STATE_INSENSITIVE]);
 			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -243,7 +260,9 @@ GtkWidget* gfw_button_new (GdkPixbuf *pixbuf)
 	widget = g_object_new (GFW_TYPE_BUTTON, "normal-pixbuf", pixbuf, NULL);
 	gtk_widget_set_events(widget, GDK_MOTION_NOTIFY | GDK_BUTTON_PRESS | GDK_BUTTON_RELEASE | GDK_ENTER_NOTIFY | GDK_LEAVE_NOTIFY);
 #if GTK_CHECK_VERSION(3,0,0)
-	gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+	GtkStateFlags new_state;
+	new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+	gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 	gtk_widget_set_state(widget, GTK_STATE_NORMAL);
 #endif
@@ -266,7 +285,9 @@ GtkWidget* gfw_button_new_with_pixbufs (GdkPixbuf *pixbuf, const gchar *first_pr
 	g_object_set_valist (G_OBJECT (widget), first_property_name, var_args);
 	va_end (var_args);
 #if GTK_CHECK_VERSION(3,0,0)
-	gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+	GtkStateFlags new_state;
+	new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+	gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 	gtk_widget_set_state(widget, GTK_STATE_NORMAL);
 #endif
@@ -283,10 +304,13 @@ static gboolean gfw_button_press (GtkWidget *widget, GdkEventButton *event)
 
 	if (event->button == 1)
 	{
-		if (priv->in_button && priv->pixbuf[GTK_STATE_ACTIVE] != NULL)
+		if (priv->in_button && priv->pixbuf[GFW_STATE_ACTIVE] != NULL)
 		{
 #if GTK_CHECK_VERSION(3,0,0)
-			gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_ACTIVE, TRUE);
+			GtkStateFlags new_state;
+			new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+			new_state |= GTK_STATE_FLAG_ACTIVE;
+			gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 			gtk_widget_set_state(widget, GTK_STATE_ACTIVE);
 #endif
@@ -307,31 +331,26 @@ static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event)
 	{
 		if (priv->in_button)
 		{
-			if (priv->pixbuf[GTK_STATE_PRELIGHT] != NULL)
+			if (priv->pixbuf[GFW_STATE_PRELIGHT] != NULL)
 			{
 #if GTK_CHECK_VERSION(3,0,0)
-				gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_PRELIGHT, TRUE);
+				GtkStateFlags new_state;
+				new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+				new_state |= GTK_STATE_FLAG_PRELIGHT;
+				gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 				gtk_widget_set_state(widget, GTK_STATE_PRELIGHT);
 #endif
-			}
-			else
-			{
+			} else {
 #if GTK_CHECK_VERSION(3,0,0)
-				gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+				GtkStateFlags new_state;
+				new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+				gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 				gtk_widget_set_state(widget, GTK_STATE_NORMAL);
 #endif
 			}
 			gfw_button_clicked(button);
-		}
-		else
-		{
-#if GTK_CHECK_VERSION(3,0,0)
-			gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
-#else
-			gtk_widget_set_state(widget, GTK_STATE_NORMAL);
-#endif
 		}
 	}
 	return TRUE;
@@ -339,12 +358,12 @@ static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event)
 
 void gfw_button_clicked (GfwButton *button)
 {
-  g_return_if_fail (GFW_IS_BUTTON (button));
+	g_return_if_fail (GFW_IS_BUTTON (button));
 
-  g_signal_emit (button, button_signals[CLICKED], 0);
+	g_signal_emit (button, button_signals[CLICKED], 0);
 }
 
-static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *event)
+gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *event)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
@@ -359,10 +378,13 @@ static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *ev
 	{
 		priv->in_button = TRUE;
 	}
-	if (priv->in_button && priv->pixbuf[GTK_STATE_PRELIGHT] != NULL)
+	if (priv->in_button && priv->pixbuf[GFW_STATE_PRELIGHT] != NULL)
 	{
 #if GTK_CHECK_VERSION(3,0,0)
-		gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_PRELIGHT, TRUE);
+		GtkStateFlags new_state;
+		new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+		new_state |= GTK_STATE_FLAG_PRELIGHT;
+		gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 		gtk_widget_set_state(widget, GTK_STATE_PRELIGHT);
 #endif
@@ -370,7 +392,7 @@ static gboolean gfw_button_enter_notify (GtkWidget *widget, GdkEventCrossing *ev
 	return FALSE;
 }
 
-static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *event)
+gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *event)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
@@ -383,12 +405,14 @@ static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *ev
 
 	if ((event_widget == widget) && (event->detail != GDK_NOTIFY_INFERIOR) && (gtk_widget_get_sensitive(event_widget)))
 	{
-			priv->in_button = FALSE;
+		priv->in_button = FALSE;
 	}
 	if (!priv->in_button)
 	{
 #if GTK_CHECK_VERSION(3,0,0)
-		gtk_widget_set_state_flags(widget, GTK_STATE_FLAG_NORMAL, TRUE);
+		GtkStateFlags new_state;
+		new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+		gtk_widget_set_state_flags(widget, new_state, TRUE);
 #else
 		gtk_widget_set_state(widget, GTK_STATE_NORMAL);
 #endif
@@ -397,24 +421,47 @@ static gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *ev
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
-static void gfw_button_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width)
+GfwStateType flags_to_state(GtkStateFlags flag)
 {
-	GtkRequisition requisition;
-	GfwButtonPrivate *priv;
+	GfwStateType state;
 
-	priv = GFW_BUTTON_GET_PRIVATE (widget);
-
-	*minimal_width = *natural_width = gdk_pixbuf_get_width(priv->pixbuf[gtk_widget_get_state(widget)]);
+	if (flag & GTK_STATE_FLAG_NORMAL) 
+		state = GFW_STATE_NORMAL;
+	else if (flag & GTK_STATE_FLAG_ACTIVE)
+		state = GFW_STATE_ACTIVE;
+	else if ( flag & GTK_STATE_FLAG_PRELIGHT)
+		state = GFW_STATE_PRELIGHT;
+	else if ( flag & GTK_STATE_FLAG_INSENSITIVE)
+		state = GFW_STATE_INSENSITIVE;
+	else
+		state = GFW_STATE_NORMAL;
+	return state;
 }
 
-static void gfw_button_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height)
+void gfw_button_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width)
 {
 	GtkRequisition requisition;
 	GfwButtonPrivate *priv;
+	GfwStateType state;
 
 	priv = GFW_BUTTON_GET_PRIVATE (widget);
 
-	*minimal_height = *natural_height = gdk_pixbuf_get_height(priv->pixbuf[gtk_widget_get_state(widget)]);
+	state = flags_to_state(gtk_widget_get_state_flags(widget));
+
+	*minimal_width = *natural_width = gdk_pixbuf_get_width(priv->pixbuf[state]);
+}
+
+void gfw_button_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height)
+{
+	GtkRequisition requisition;
+	GfwButtonPrivate *priv;
+	GfwStateType state;
+
+	priv = GFW_BUTTON_GET_PRIVATE (widget);
+
+	state = flags_to_state(gtk_widget_get_state_flags(widget));
+
+	*minimal_height = *natural_height = gdk_pixbuf_get_height(priv->pixbuf[state]);
 }
 #else
 static void gfw_button_size_request (GtkWidget *widget, GtkRequisition *requisition)
@@ -432,7 +479,7 @@ static void gfw_button_size_request (GtkWidget *widget, GtkRequisition *requisit
 }
 #endif
 
-static void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_state)
+void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_state)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
@@ -444,17 +491,16 @@ static void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
-static gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
+gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
-	GdkRectangle area;
-	GtkStateType state;
+	GfwStateType state;
 
 	button = GFW_BUTTON (widget);
 	priv = GFW_BUTTON_GET_PRIVATE (button);
 
-	state = gtk_widget_get_state(widget);
+	state = flags_to_state(gtk_widget_get_state_flags(widget));
 
 	if (gtk_widget_get_mapped (widget))
 	{
@@ -464,7 +510,7 @@ static gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
 		image_bound.width = gdk_pixbuf_get_width(priv->pixbuf[state]);
 		image_bound.height = gdk_pixbuf_get_height(priv->pixbuf[state]);
 
-		pixbuf = gdk_pixbuf_new_subpixbuf(priv->pixbuf[state], area.x, area.y, image_bound.width, image_bound.height);
+		pixbuf = gdk_pixbuf_new_subpixbuf(priv->pixbuf[state], 0, 0, image_bound.width, image_bound.height);
 
 		cairo_surface_t *surface;
 		cairo_region_t *region;
@@ -481,7 +527,9 @@ static gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
 	}
 	return FALSE;
 }
+
 #else
+
 static gboolean gfw_button_expose (GtkWidget *widget, GdkEventExpose *event)
 {
 	GfwButton *button;

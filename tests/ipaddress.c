@@ -24,6 +24,7 @@
 
 static void ip_address_changed(GfwIpEntry* entry)
 {
+	g_print("ip changed\n");
 }
 
 int main (int argc, char *argv[])
