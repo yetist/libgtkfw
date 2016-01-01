@@ -34,3 +34,5 @@ libgtkfw_1_0_la_LDFLAGS = $(GTK_CFLAGS) \
 	-version-info $(LT_VERSION_INFO)
 
 libgtkfw_1_0_la_LIBADD = $(GTK_LIBS)
+
+-include $(top_srcdir)/git.mk

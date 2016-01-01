@@ -55,4 +55,3 @@ EXTRA_DIST += 			\
 	press.png
 
 -include $(top_srcdir)/git.mk
-

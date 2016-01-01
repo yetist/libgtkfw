@@ -351,6 +351,17 @@ static gboolean gfw_button_release (GtkWidget *widget, GdkEventButton *event)
 #endif
 			}
 			gfw_button_clicked(button);
+			if (! gtk_widget_get_sensitive(widget) && (priv->pixbuf[GFW_STATE_INSENSITIVE] != NULL)) {
+				priv->in_button = FALSE;
+#if GTK_CHECK_VERSION(3,0,0)
+				GtkStateFlags new_state;
+				new_state = gtk_widget_get_state_flags (widget) & ~(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE);
+				new_state |= GTK_STATE_FLAG_INSENSITIVE;
+				gtk_widget_set_state_flags(widget, new_state, TRUE);
+#else
+				gtk_widget_set_state(widget, GTK_STATE_INSENSITIVE);
+#endif
+			}
 		}
 	}
 	return TRUE;
@@ -407,6 +418,7 @@ gboolean gfw_button_leave_notify (GtkWidget *widget, GdkEventCrossing *event)
 	{
 		priv->in_button = FALSE;
 	}
+
 	if (!priv->in_button)
 	{
 #if GTK_CHECK_VERSION(3,0,0)
