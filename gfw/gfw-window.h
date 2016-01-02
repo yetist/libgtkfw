@@ -52,7 +52,9 @@ GType          gfw_window_get_type           (void) G_GNUC_CONST;
 GtkWidget*     gfw_window_new (GtkWindowType type);
 void           gfw_window_set_background (GfwWindow *window, GdkPixbuf *pixbuf);
 void           gfw_window_set_transparent (GfwWindow *window, gboolean transparent);
+gboolean       gfw_window_get_transparent (GfwWindow *window);
 void           gfw_window_set_size_fit_pixbuf (GfwWindow *window, gboolean is_fit);
+gboolean       gfw_window_get_size_fit_pixbuf (GfwWindow *window);
 
 G_END_DECLS
 

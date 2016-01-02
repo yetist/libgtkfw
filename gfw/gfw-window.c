@@ -199,20 +199,58 @@ static void gfw_window_get_preferred_width (GtkWidget *widget, gint *minimal_wid
 {
 	GtkRequisition requisition;
 	GfwWindowPrivate *priv;
+	GtkWidget *child_widget;
 
 	priv = GFW_WINDOW_GET_PRIVATE (widget);
 
-	*minimal_width = *natural_width = gdk_pixbuf_get_width(priv->background);
+	*minimal_width = *natural_width = gtk_container_get_border_width(GTK_CONTAINER(widget)) * 2;
+	child_widget = gtk_bin_get_child(GTK_BIN(widget));
+	if (child_widget != NULL && gtk_widget_get_visible (child_widget))
+	{
+		gint min_width, nat_width;
+		gtk_widget_get_preferred_width(child_widget, &min_width, &nat_width);
+		*minimal_width += min_width;
+		*natural_width += nat_width;
+	}
+
+	if (priv->background != NULL && (priv->size_fit_pixbuf || priv->transparent))
+	{
+		gint width;
+		width = gdk_pixbuf_get_width(priv->background);
+		if (*minimal_width < width)
+			*minimal_width = width;
+		if (*natural_width< width)
+			*natural_width = width;
+	}
 }
 
 static void gfw_window_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height)
 {
 	GtkRequisition requisition;
 	GfwWindowPrivate *priv;
+	GtkWidget *child_widget;
 
 	priv = GFW_WINDOW_GET_PRIVATE (widget);
 
-	*minimal_height = *natural_height = gdk_pixbuf_get_height(priv->background);
+	*minimal_height = *natural_height = gtk_container_get_border_width(GTK_CONTAINER(widget)) * 2;
+	child_widget = gtk_bin_get_child(GTK_BIN(widget));
+	if (child_widget != NULL && gtk_widget_get_visible (child_widget))
+	{
+		gint min_height, nat_height;
+		gtk_widget_get_preferred_height(child_widget, &min_height, &nat_height);
+		*minimal_height += min_height;
+		*natural_height += nat_height;
+	}
+
+	if (priv->background != NULL && (priv->size_fit_pixbuf || priv->transparent))
+	{
+		gint height;
+		height = gdk_pixbuf_get_height(priv->background);
+		if (*minimal_height < height)
+			*minimal_height = height;
+		if (*natural_height< height)
+			*natural_height = height;
+	}
 }
 
 static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr)
@@ -227,6 +265,7 @@ static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr)
 	{
 		cairo_surface_t *surface;
 		surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 1, NULL);
+		//surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 1, GDK_WINDOW(gtk_widget_get_window(widget)));
 		if (priv->transparent)
 		{
 			cairo_region_t *region;
@@ -235,6 +274,7 @@ static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr)
 			cairo_region_destroy(region);
 		}
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+		//cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 		cairo_set_source_surface (cr, surface, 0, 0);
 		cairo_paint(cr);
 	}
@@ -365,4 +405,24 @@ void gfw_window_set_size_fit_pixbuf (GfwWindow *window, gboolean is_fit)
 		return;
 	priv->size_fit_pixbuf = is_fit;
 	g_object_notify (G_OBJECT (window), "size_fit_pixbuf");
+	gtk_window_set_resizable(GTK_WINDOW(window), !is_fit);
+}
+
+gboolean gfw_window_get_transparent (GfwWindow *window)
+{
+    GfwWindowPrivate *priv;
+	g_return_val_if_fail (GFW_IS_WINDOW (window), FALSE);
+
+    priv = GFW_WINDOW_GET_PRIVATE (window);
+	return  priv->transparent;
+}
+
+gboolean gfw_window_get_size_fit_pixbuf (GfwWindow *window)
+{
+    GfwWindowPrivate *priv;
+
+	g_return_val_if_fail (GFW_IS_WINDOW (window), FALSE);
+
+    priv = GFW_WINDOW_GET_PRIVATE (window);
+	return  priv->size_fit_pixbuf;
 }
