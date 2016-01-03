@@ -50,12 +50,13 @@ static void gfw_window_finalize (GObject *object);
 #if GTK_CHECK_VERSION(3,0,0)
 static void gfw_window_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width);
 static void gfw_window_get_preferred_height (GtkWidget *widget, gint *minimal_height, gint *natural_height);
-static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr);
+static gboolean gfw_window_draw(GtkWidget *widget, cairo_t *cr);
 #else
 static gboolean gfw_window_expose (GtkWidget *widget, GdkEventExpose *event);
 static void gfw_window_size_request (GtkWidget *widget, GtkRequisition *requisition);
 #endif
 void gfw_window_set_background (GfwWindow *window, GdkPixbuf *pixbuf);
+gboolean gfw_window_configure(GtkWidget *widget, GdkEventConfigure *event);
 
 G_DEFINE_TYPE (GfwWindow, gfw_window, GTK_TYPE_WINDOW);
 
@@ -77,6 +78,7 @@ gfw_window_class_init (GfwWindowClass *class)
 	widget_class->expose_event = gfw_window_expose;
 	widget_class->size_request = gfw_window_size_request;
 #endif
+	//widget_class->configure_event = gfw_window_configure;
 
 	g_object_class_install_property (object_class,
 			PROP_BACKGROUND,
@@ -89,14 +91,14 @@ gfw_window_class_init (GfwWindowClass *class)
 			PROP_TRANSPARENT,
 			g_param_spec_boolean ("transparent",
 				"Transparent Mode",
-				"Weather window is transparent",
+				"Whether window is transparent",
 				FALSE,
 				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 	g_object_class_install_property (object_class,
 			PROP_SIZE_FIT_PIXBUF,
 			g_param_spec_boolean ("size-fit-pixbuf",
 				"Fit pixbuf size",
-				"Weather window's size fit the pixbuf",
+				"Whether window's size fit the pixbuf",
 				FALSE,
 				G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 
@@ -253,36 +255,40 @@ static void gfw_window_get_preferred_height (GtkWidget *widget, gint *minimal_he
 	}
 }
 
-static gboolean gfw_window_draw (GtkWidget *widget, cairo_t *cr)
+static gboolean gfw_window_draw(GtkWidget *widget, cairo_t *cr)
 {
 	GfwWindow *window;
 	GfwWindowPrivate *priv;
+	gboolean ret;
 
 	window = GFW_WINDOW (widget);
 	priv = GFW_WINDOW_GET_PRIVATE (window);
 
-	if (priv->background != NULL)
+	if (gtk_widget_get_realized(widget))
 	{
-		cairo_surface_t *surface;
-		surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 1, NULL);
-		//surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 1, GDK_WINDOW(gtk_widget_get_window(widget)));
-		if (priv->transparent)
+		if (priv->background != NULL)
 		{
-			cairo_region_t *region;
-			region = gdk_cairo_region_create_from_surface (surface);
-			gdk_window_shape_combine_region (GDK_WINDOW(gtk_widget_get_window(widget)), region, 0, 0);
-			cairo_region_destroy(region);
+			cairo_surface_t *surface;
+			surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 0, NULL);
+			//surface = gdk_cairo_surface_create_from_pixbuf (priv->background, 0, GDK_WINDOW(gtk_widget_get_window(widget)));
+			cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+			cairo_set_source_surface (cr, surface, 0, 0);
+			cairo_paint (cr);
+			if (priv->transparent)
+			{
+				cairo_region_t *region;
+				region = gdk_cairo_region_create_from_surface (surface);
+				gdk_window_shape_combine_region (GDK_WINDOW(gtk_widget_get_window(widget)), region, 0, 0);
+				//gtk_widget_shape_combine_region (widget, region);
+				cairo_region_translate (region, 0, 0);
+				cairo_region_destroy(region);
+			}
+			cairo_surface_destroy (surface);
 		}
-		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		//cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-		cairo_set_source_surface (cr, surface, 0, 0);
-		cairo_paint(cr);
 	}
-
 	if (GTK_WIDGET_CLASS (gfw_window_parent_class)->draw)
-		GTK_WIDGET_CLASS (gfw_window_parent_class)->draw(widget, cr);
-
-	return FALSE;
+		ret = GTK_WIDGET_CLASS (gfw_window_parent_class)->draw(widget, cr);
+	return ret;
 }
 #else
 static void gfw_window_size_request (GtkWidget *widget, GtkRequisition *requisition)
@@ -346,8 +352,8 @@ static gboolean gfw_window_expose (GtkWidget *widget, GdkEventExpose *event)
 		cairo_destroy(cr);
 	}
 
-  if (GTK_WIDGET_CLASS (gfw_window_parent_class)->expose_event)
-    return GTK_WIDGET_CLASS (gfw_window_parent_class)->expose_event (widget, event);
+	if (GTK_WIDGET_CLASS (gfw_window_parent_class)->expose_event)
+		return GTK_WIDGET_CLASS (gfw_window_parent_class)->expose_event (widget, event);
 
   return FALSE;
 }
@@ -371,7 +377,6 @@ void gfw_window_set_background (GfwWindow *window, GdkPixbuf *pixbuf)
 		gtk_widget_set_app_paintable(GTK_WIDGET(window),TRUE);
 		gtk_widget_realize (GTK_WIDGET(window));
 	}
-
 }
 
 void gfw_window_set_transparent (GfwWindow *window, gboolean transparent)
@@ -426,3 +431,15 @@ gboolean gfw_window_get_size_fit_pixbuf (GfwWindow *window)
     priv = GFW_WINDOW_GET_PRIVATE (window);
 	return  priv->size_fit_pixbuf;
 }
+
+gboolean gfw_window_configure(GtkWidget *widget, GdkEventConfigure *event)
+{
+	GfwWindow *window;
+	GfwWindowPrivate *priv;
+
+	window = GFW_WINDOW(widget);
+	priv = GFW_WINDOW_GET_PRIVATE (window);
+	//gtk_widget_queue_draw (GTK_WIDGET (widget));
+	g_print("call window configure\n");
+}
+

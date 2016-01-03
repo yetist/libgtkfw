@@ -22,7 +22,7 @@ void toggled (GtkToggleButton *togglebutton, gpointer user_data)
 int main( int argc, char *argv[] )
 {
     GtkWidget *window;
-    GtkWidget *button;
+    GtkWidget *fixed, *button;
     GdkPixbuf *background;
 
     gtk_init (&argc, &argv);
@@ -35,11 +35,14 @@ int main( int argc, char *argv[] )
     background = gdk_pixbuf_new_from_file("background.png", NULL);
     gfw_window_set_background(GFW_WINDOW(window), background);
 
+    fixed = gtk_fixed_new();
+    gtk_container_add(GTK_CONTAINER(window), fixed);
+
     button = gtk_toggle_button_new_with_label("Size fit background");
-    //gtk_widget_set_opacity(GTK_WIDGET(button), 0.5);
+    gtk_widget_set_opacity(GTK_WIDGET(button), 0.5);
     g_signal_connect (button, "toggled", G_CALLBACK (toggled), window);
 
-    gtk_container_add(GTK_CONTAINER (window), button);
+    gtk_fixed_put(GTK_FIXED(fixed), button, 10, 10);
 
     gtk_widget_show_all (window);
     gtk_main ();

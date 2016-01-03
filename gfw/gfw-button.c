@@ -491,7 +491,7 @@ static void gfw_button_size_request (GtkWidget *widget, GtkRequisition *requisit
 }
 #endif
 
-void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_state)
+void gfw_button_state_changed(GtkWidget *widget, GtkStateType  previous_state)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;
@@ -503,7 +503,7 @@ void gfw_button_state_changed (GtkWidget *widget, GtkStateType  previous_state)
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
-gboolean gfw_button_draw (GtkWidget *widget, cairo_t *cr)
+gboolean gfw_button_draw(GtkWidget *widget, cairo_t *cr)
 {
 	GfwButton *button;
 	GfwButtonPrivate *priv;

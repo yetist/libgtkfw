@@ -26,7 +26,7 @@ static void button_pressed(GtkWidget *widget, gpointer   data )
 {
 	GfwWindow *window;
 	window = GFW_WINDOW(data);
-	gfw_window_set_transparent(window, !gfw_window_get_transparent(window));
+	//gfw_window_set_transparent(window, !gfw_window_get_transparent(window));
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent  *event, gpointer data)
@@ -52,6 +52,7 @@ int main( int argc, char *argv[] )
 	bg = gdk_pixbuf_new_from_file("clock.png", NULL);
 
 	gfw_window_set_background(GFW_WINDOW(window), bg);
+	gfw_window_set_size_fit_pixbuf(GFW_WINDOW(window), TRUE);
 	gfw_window_set_transparent (GFW_WINDOW(window), TRUE);
 
     g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
@@ -65,6 +66,7 @@ int main( int argc, char *argv[] )
     prelight = gdk_pixbuf_new_from_file("btn3.png", NULL);
 
     button = gfw_button_new_with_pixbufs(normal, "active-pixbuf", active, "prelight-pixbuf", prelight, NULL);
+    //button = gtk_button_new_with_label("hello");
     gtk_widget_set_tooltip_text (button, "gfwbutton with 3 states: normal, active and prelight");
     g_signal_connect (button, "clicked", G_CALLBACK (button_pressed), window);
 
