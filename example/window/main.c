@@ -3,13 +3,13 @@
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent  *event, gpointer data)
 {
-    g_print ("delete event occurred\n");
-    return FALSE;
+	g_print ("delete event occurred\n");
+	return FALSE;
 }
 
 static void destroy( GtkWidget *widget, gpointer data )
 {
-    gtk_main_quit ();
+	gtk_main_quit ();
 }
 
 void toggled (GtkToggleButton *togglebutton, gpointer user_data)
@@ -21,30 +21,30 @@ void toggled (GtkToggleButton *togglebutton, gpointer user_data)
 
 int main( int argc, char *argv[] )
 {
-    GtkWidget *window;
-    GtkWidget *fixed, *button;
-    GdkPixbuf *background;
+	GtkWidget *window;
+	GtkWidget *fixed, *button;
+	GdkPixbuf *background;
 
-    gtk_init (&argc, &argv);
-    window = gfw_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
-    g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
-    g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
-    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+	gtk_init (&argc, &argv);
+	window = gfw_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
+	g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
+	g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL);
+	gtk_container_set_border_width (GTK_CONTAINER (window), 10);
 
-    background = gdk_pixbuf_new_from_file("background.png", NULL);
-    gfw_window_set_background(GFW_WINDOW(window), background);
+	background = gdk_pixbuf_new_from_file("background.png", NULL);
+	gfw_window_set_background(GFW_WINDOW(window), background);
 
-    fixed = gtk_fixed_new();
-    gtk_container_add(GTK_CONTAINER(window), fixed);
+	fixed = gtk_fixed_new();
+	gtk_container_add(GTK_CONTAINER(window), fixed);
 
-    button = gtk_toggle_button_new_with_label("Size fit background");
-    gtk_widget_set_opacity(GTK_WIDGET(button), 0.5);
-    g_signal_connect (button, "toggled", G_CALLBACK (toggled), window);
+	button = gtk_toggle_button_new_with_label("Size fit background");
+	gtk_widget_set_opacity(GTK_WIDGET(button), 0.5);
+	g_signal_connect (button, "toggled", G_CALLBACK (toggled), window);
 
-    gtk_fixed_put(GTK_FIXED(fixed), button, 10, 10);
+	gtk_fixed_put(GTK_FIXED(fixed), button, 10, 10);
 
-    gtk_widget_show_all (window);
-    gtk_main ();
-    return 0;
+	gtk_widget_show_all (window);
+	gtk_main ();
+	return 0;
 }

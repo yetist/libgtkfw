@@ -53,7 +53,7 @@ int main( int argc, char *argv[] )
 	bg = gdk_pixbuf_new_from_file("background.png", NULL);
 
 	gfw_window_set_background(GFW_WINDOW(window), bg);
-	gfw_window_set_transparent (GFW_WINDOW(window), TRUE);
+	gfw_window_set_transparent (GFW_WINDOW(window), FALSE);
 
     g_signal_connect (window, "delete-event", G_CALLBACK (delete_event), NULL);
     g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);

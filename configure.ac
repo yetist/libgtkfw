@@ -68,8 +68,6 @@ gtkfw-1.0.pc
 gfw/Makefile
 tests/Makefile
 example/Makefile
-example/button/Makefile
-example/window/Makefile
 Makefile
 ])
 
