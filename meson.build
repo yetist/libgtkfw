@@ -18,12 +18,7 @@ conf.set_quoted('GETTEXT_PACKAGE', meson.project_name())
 conf.set_quoted('PACKAGE', meson.project_name())
 conf.set_quoted('PACKAGE_NAME', meson.project_name())
 
-if get_option('enable-gtk3')
-  gtk_deps = dependency('gtk+-3.0')
-else
-  gtk_deps = dependency('gtk+-2.0')
-endif
-
+gtk_deps = dependency('gtk+-3.0')
 libm = cc.find_library('m', required: false)
 
 top_srcdir = include_directories('.')
@@ -31,3 +26,14 @@ top_libdir = include_directories('./gfw')
 
 subdir('gfw')
 subdir('example')
+
+pkg = import('pkgconfig')
+pkg.generate(
+	name: 'gtkfw-1.0',
+	version: meson.project_version(),
+	description: 'Gtk+ Feathur Widget Library',
+	filebase: 'gtkfw-1.0',
+	requires: 'gtk+-3.0',
+	libraries: '-lgtkfw-1.0',
+	subdirs: 'libgtkfw-1.0',
+)

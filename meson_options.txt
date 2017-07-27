@@ -1,1 +1,0 @@
-option('enable-gtk3', type: 'boolean', value : true, description: 'Build for GTK3 version. (default:true)')
